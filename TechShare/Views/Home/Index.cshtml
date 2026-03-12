@@ -1,0 +1,60 @@
+﻿@model IEnumerable<TechShare.Models.Product>
+
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+<div class="text-center mb-5">
+    <h1 class="display-4">Chào mừng đến với TechShare</h1>
+    <p>Nền tảng chia sẻ thiết bị công nghệ hàng đầu</p>
+</div>
+<div class="card mb-4 shadow-sm border-0 bg-light">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-3 align-items-center">
+            
+            <div class="col-md-6">
+                <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" 
+                       class="form-control" placeholder="🔍 Bạn muốn thuê gì hôm nay? (Ví dụ: Macbook, Sony...)" />
+            </div>
+
+            <div class="col-md-4">
+                <select name="categoryId" class="form-select" asp-items="ViewBag.Categories">
+                    <option value="">-- Tất cả danh mục --</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="row">
+    @foreach (var item in Model)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/300x200?text=No+Image" : item.ImageUrl)" 
+                     class="card-img-top" alt="@item.Name" style="height: 200px; object-fit: cover;">
+                
+                <div class="card-body">
+                    <h5 class="card-title">@item.Name</h5>
+                    <p class="card-text text-muted">@item.Description</p>
+                    <h6 class="text-primary font-weight-bold">@item.PricePerDay.ToString("N0") VNĐ / ngày</h6>
+                    
+                    <p class="small text-secondary">
+                        <i class="bi bi-geo-alt"></i> @item.Location | 
+                        <span class="badge bg-info">@item.Category?.Name</span>
+                    </p>
+                </div>
+                
+                <div class="card-footer bg-white border-top-0">
+                    <a asp-controller="Bookings" asp-action="Create" asp-route-productId="@item.Id" 
+                       class="btn btn-success w-100">
+                        Thuê ngay
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,77 @@
+@model IEnumerable<TechShare.Models.Booking>
+
+@{
+    ViewData["Title"] = "Quản lý Đặt lịch";
+}
+
+<div class="container-fluid">
+    <h1 class="text-danger mb-4"><i class="bi bi-gear-wide-connected"></i> Quản lý Đặt lịch (Admin)</h1>
+
+    <div class="card shadow border-0">
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Khách hàng</th>
+                        <th>Sản phẩm</th>
+                        <th>Ngày thuê</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@(item.Renter?.UserName ?? item.RenterId)</strong><br/>
+                                <small class="text-muted">Ngày đặt: @item.BookingDate.ToString("dd/MM/yyyy")</small>
+                            </td>
+                            <td class="text-primary fw-bold">@item.Product?.Name</td>
+                            <td>
+                                @item.StartDate.ToString("dd/MM") <i class="bi bi-arrow-right"></i> @item.EndDate.ToString("dd/MM")
+                            </td>
+                            <td class="text-success fw-bold">
+                                @item.TotalAmount.ToString("N0") đ
+                            </td>
+                            <td>
+                                @if (item.Status == TechShare.Models.BookingStatus.Pending)
+                                {
+                                    <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                                }
+                                else if (item.Status == TechShare.Models.BookingStatus.Approved)
+                                {
+                                    <span class="badge bg-success">Đã duyệt</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Đã hủy</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (item.Status == TechShare.Models.BookingStatus.Pending)
+                                {
+                                    <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-success btn-sm me-1" title="Duyệt đơn">
+                                        <i class="bi bi-check-lg"></i> Duyệt
+                                    </a>
+                                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-danger btn-sm" title="Từ chối" onclick="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
+                                        <i class="bi bi-x-lg"></i> Hủy
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Đã xử lý</span>
+                                }
+                                
+                                <div class="mt-2">
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="text-decoration-none small text-danger">Xóa</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

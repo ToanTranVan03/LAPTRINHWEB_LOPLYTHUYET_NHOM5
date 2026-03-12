@@ -1,0 +1,61 @@
+@{
+    ViewData["Title"] = "Thống kê hệ thống";
+}
+
+<div class="container py-4">
+    <h2 class="text-primary fw-bold mb-4"><i class="bi bi-speedometer2"></i> Bảng điều khiển (Admin Dashboard)</h2>
+
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success shadow h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-currency-dollar"></i> Tổng doanh thu</h5>
+                    <p class="card-text display-6 fw-bold">@ViewBag.TotalRevenue.ToString("N0") đ</p>
+                    <small>Từ các đơn đã duyệt</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-warning shadow h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-cart-check"></i> Tổng đơn hàng</h5>
+                    <p class="card-text display-6 fw-bold">@ViewBag.TotalOrders</p>
+                    <small>Bao gồm cả chờ & hủy</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-primary shadow h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-laptop"></i> Tổng sản phẩm</h5>
+                    <p class="card-text display-6 fw-bold">@ViewBag.TotalProducts</p>
+                    <small>Thiết bị đang cho thuê</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-info shadow h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-people"></i> Tổng thành viên</h5>
+                    <p class="card-text display-6 fw-bold">@ViewBag.TotalUsers</p>
+                    <small>Người dùng hệ thống</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <h4>Truy cập nhanh</h4>
+        <div class="list-group">
+            <a asp-controller="Bookings" asp-action="Index" class="list-group-item list-group-item-action">
+                👉 Xem danh sách đơn đặt hàng cần duyệt
+            </a>
+            <a asp-controller="Products" asp-action="Create" class="list-group-item list-group-item-action">
+                👉 Đăng sản phẩm mới
+            </a>
+        </div>
+    </div>
+</div>

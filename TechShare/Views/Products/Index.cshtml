@@ -1,0 +1,59 @@
+@model IEnumerable<TechShare.Models.Product>
+
+@{
+    ViewData["Title"] = "Quản lý Sản phẩm";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="text-danger"><i class="bi bi-box-seam"></i> Quản lý Sản phẩm</h1>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm sản phẩm mới</a>
+    </div>
+
+    <table class="table table-hover align-middle shadow-sm bg-white rounded">
+        <thead class="bg-light">
+            <tr>
+                <th>Ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Mô tả</th>
+                <th>Giá thuê</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model) {
+                <tr>
+                    <td>
+                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/100" : item.ImageUrl)" 
+                             style="width: 80px; height: 60px; object-fit: cover; border-radius: 5px;" />
+                    </td>
+                    <td class="fw-bold text-primary">@item.Name</td>
+                    <td>@item.Description</td>
+                    <td class="text-success fw-bold">@item.PricePerDay.ToString("N0") đ/ngày</td>
+                    <td>
+                        @if (item.IsAvailable)
+                        {
+                            <span class="badge bg-success">Sẵn sàng</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Đang bận</span>
+                        }
+                    </td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Sửa">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Chi tiết">
+                            <i class="bi bi-info-circle"></i>
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
