@@ -59,3 +59,21 @@
         </div>
     </div>
 </div>
+<div class="mt-5 mb-5">
+        <h4 class="text-danger"><i class="bi bi-person-badge"></i> Quản lý nhân sự</h4>
+        <div class="card border-danger shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Thêm Admin mới</h5>
+                <p class="card-text text-muted">Nhập email của thành viên bạn muốn cấp quyền Admin. <strong class="text-danger">Lưu ý: Họ phải đăng ký tài khoản trước.</strong></p>
+                
+                <form asp-action="PromoteAdmin" method="post" class="row g-3">
+                    <div class="col-auto flex-grow-1">
+                        <input type="email" name="email" class="form-control" placeholder="Nhập email người đó (ví dụ: ban_cua_toi@gmail.com)" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-danger">Thăng chức ngay</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>

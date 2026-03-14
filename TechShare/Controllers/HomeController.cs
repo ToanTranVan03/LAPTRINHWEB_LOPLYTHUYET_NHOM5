@@ -83,7 +83,32 @@ public class HomeController : Controller
 
         return View();
     }
+// --- HÀM THĂNG CHỨC ADMIN (CHỈ ADMIN HIỆN TẠI MỚI DÙNG ĐƯỢC) ---
+    [Authorize(Roles = "Admin")]
+    [HttpPost] // Hàm này nhận dữ liệu từ Form gửi lên
+    public async Task<IActionResult> PromoteAdmin(string email)
+    {
+        // 1. Tìm người dùng theo email
+        var user = await _userManager.FindByEmailAsync(email);
 
+        // 2. Kiểm tra xem có tìm thấy không
+        if (user == null)
+        {
+            // Nếu không thấy, báo lỗi (bạn có thể làm trang báo lỗi đẹp hơn sau này)
+            return Content($"❌ Lỗi: Không tìm thấy tài khoản nào có email: {email}. Hãy bảo họ đăng ký tài khoản trước!");
+        }
+
+        // 3. Nếu tìm thấy -> Thêm vào nhóm Admin
+        if (!await _userManager.IsInRoleAsync(user, "Admin"))
+        {
+            await _userManager.AddToRoleAsync(user, "Admin");
+            return Content($"✅ Thành công! Tài khoản {email} đã trở thành Admin. Hãy bảo họ đăng xuất và đăng nhập lại.");
+        }
+        else
+        {
+            return Content($"ℹ️ Tài khoản {email} đã là Admin từ trước rồi!");
+        }
+    }
     public IActionResult Privacy()
     {
         return View();
