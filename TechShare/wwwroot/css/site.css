@@ -29,3 +29,30 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+/* Hiệu ứng di chuột cho Link ở Navbar */
+.hover-primary {
+    transition: color 0.3s ease;
+}
+.hover-primary:hover {
+    color: #0d6efd !important;
+}
+
+/* Hiệu ứng trượt ngang cho Link ở Footer */
+.custom-link {
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+.custom-link:hover {
+    color: #fff !important;
+    transform: translateX(5px);
+}
+
+/* Hiệu ứng nhấc bổng cho Card Sản Phẩm */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 12px;
+}
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+}

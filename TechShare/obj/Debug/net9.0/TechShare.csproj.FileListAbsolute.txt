@@ -709,7 +709,6 @@ D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\a3ygkwa5zy-{0}-2z0ns9nr
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\nezrqnk58p-{0}-muycvpuwrr-muycvpuwrr.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\v0zgfp0y55-{0}-87fc7y1x7t-87fc7y1x7t.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\yfc7ypekbg-{0}-mlv21k5csn-mlv21k5csn.gz
-D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\bp8pap2y8f-{0}-b9sayid5wm-b9sayid5wm.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\0485tg9we9-{0}-61n19gt1b8-61n19gt1b8.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\zyganq79kj-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\ldk29kr3zz-{0}-bqjiyaj88i-bqjiyaj88i.gz
@@ -784,3 +783,4 @@ D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\refint\TechShare.dll
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\TechShare.pdb
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\TechShare.genruntimeconfig.cache
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\ref\TechShare.dll
+D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\bp8pap2y8f-{0}-wkzi6yj5yt-wkzi6yj5yt.gz

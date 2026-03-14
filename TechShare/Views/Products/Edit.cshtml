@@ -1,73 +1,86 @@
 @model TechShare.Models.Product
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Chỉnh sửa Sản phẩm";
 }
 
-<h1>Edit</h1>
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-warning text-dark text-center py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square"></i> Chỉnh sửa thông tin Sản phẩm</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Edit" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="ImageUrl" /> 
+                        <input type="hidden" asp-for="OwnerId" />
 
-<h4>Product</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit" enctype="multipart/form-data">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PricePerDay" class="control-label"></label>
-                <input asp-for="PricePerDay" class="form-control" />
-                <span asp-validation-for="PricePerDay" class="text-danger"></span>
-            </div>
-<input type="hidden" asp-for="ImageUrl" />
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Name" class="form-label fw-bold">Tên thiết bị</label>
+                                <input asp-for="Name" class="form-control" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CategoryId" class="form-label fw-bold">Danh mục</label>
+                                <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.CategoryId"></select>
+                            </div>
+                        </div>
 
-<div class="form-group mb-3">
-    <label class="control-label">Ảnh hiện tại:</label><br />
-    <img src="@Model.ImageUrl" style="max-width: 200px; border-radius: 5px; margin-bottom: 10px;" />
-</div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">Mô tả chi tiết</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                        </div>
 
-<div class="form-group mb-3">
-    <label class="control-label">Thay ảnh mới (Nếu muốn):</label>
-    <input type="file" name="imageFile" class="form-control" accept="image/*" />
-</div>
-            <div class="form-group">
-                <label asp-for="Location" class="control-label"></label>
-                <input asp-for="Location" class="form-control" />
-                <span asp-validation-for="Location" class="text-danger"></span>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="PricePerDay" class="form-label fw-bold">Giá thuê (VNĐ / ngày)</label>
+                                <div class="input-group">
+                                    <input asp-for="PricePerDay" class="form-control" type="number" />
+                                    <span class="input-group-text">VNĐ</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Location" class="form-label fw-bold">Khu vực / Phòng</label>
+                                <input asp-for="Location" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-4 align-items-center bg-light p-3 rounded-3 mx-0">
+                            <div class="col-md-4 text-center">
+                                <label class="form-label fw-bold d-block text-muted small">Ảnh hiện tại</label>
+                                <img src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "https://via.placeholder.com/150" : Model.ImageUrl)" 
+                                     class="img-thumbnail shadow-sm" style="max-height: 120px; object-fit: cover;" />
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold text-primary"><i class="bi bi-image"></i> Thay ảnh mới (Nếu muốn)</label>
+                                <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                                <small class="text-muted fst-italic mt-1 d-block">Bỏ trống ô này nếu bạn muốn giữ nguyên ảnh cũ.</small>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mb-4">
+                            <input asp-for="IsAvailable" class="form-check-input" type="checkbox" role="switch">
+                            <label class="form-check-label fw-bold" asp-for="IsAvailable">Sẵn sàng cho thuê ngay</label>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i> Hủy & Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-warning px-4 fw-bold">
+                                <i class="bi bi-check2-all"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="IsAvailable" /> @Html.DisplayNameFor(model => model.IsAvailable)
-                </label>
-            </div>
-            <div class="form-group">
-                <label asp-for="CategoryId" class="control-label"></label>
-                <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
-                <span asp-validation-for="CategoryId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="OwnerId" class="control-label"></label>
-                <select asp-for="OwnerId" class="form-control" asp-items="ViewBag.OwnerId"></select>
-                <span asp-validation-for="OwnerId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+        </div>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {
