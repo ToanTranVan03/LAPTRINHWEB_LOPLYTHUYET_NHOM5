@@ -66,48 +66,78 @@ public class HomeController : Controller
         return Content("❌ Bạn chưa đăng nhập!");
     }
 
-    // 3. DASHBOARD THỐNG KÊ (ĐOẠN BẠN ĐANG THIẾU TRONG CODE CŨ)
-    [Authorize(Roles = "Admin")] 
+
+// ==========================================================
+    // --- 1. HÀM DASHBOARD (CẬP NHẬT: LẤY THÊM DANH SÁCH USER) ---
+    // ==========================================================
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Dashboard()
     {
-        // Doanh thu (Chỉ tính đơn đã duyệt)
-        var totalRevenue = await _context.Bookings
-            .Where(b => b.Status == BookingStatus.Approved)
-            .SumAsync(b => b.TotalAmount);
-
-        // Các số liệu khác
-        ViewBag.TotalRevenue = totalRevenue;
+        ViewBag.TotalRevenue = await _context.Bookings.Where(b => b.Status == BookingStatus.Approved).SumAsync(b => b.TotalAmount);
         ViewBag.TotalOrders = await _context.Bookings.CountAsync();
         ViewBag.TotalProducts = await _context.Products.CountAsync();
         ViewBag.TotalUsers = await _userManager.Users.CountAsync();
 
+        // LẬP DANH SÁCH USER VÀ KIỂM TRA QUYỀN
+        var userRoles = new Dictionary<string, bool>();
+        var allUsers = await _userManager.Users.ToListAsync();
+        foreach (var u in allUsers)
+        {
+            // Kiểm tra xem user này có phải Admin không (True/False)
+            userRoles[u.Email] = await _userManager.IsInRoleAsync(u, "Admin");
+        }
+        // Gửi danh sách này sang View
+        ViewBag.UserRoles = userRoles;
+
         return View();
     }
-// --- HÀM THĂNG CHỨC ADMIN (CHỈ ADMIN HIỆN TẠI MỚI DÙNG ĐƯỢC) ---
+
+    // ==========================================================
+    // --- 2. HÀM THĂNG CHỨC (CẬP NHẬT: THÔNG BÁO MƯỢT HƠN) ---
+    // ==========================================================
     [Authorize(Roles = "Admin")]
-    [HttpPost] // Hàm này nhận dữ liệu từ Form gửi lên
+    [HttpPost]
     public async Task<IActionResult> PromoteAdmin(string email)
     {
-        // 1. Tìm người dùng theo email
         var user = await _userManager.FindByEmailAsync(email);
-
-        // 2. Kiểm tra xem có tìm thấy không
-        if (user == null)
-        {
-            // Nếu không thấy, báo lỗi (bạn có thể làm trang báo lỗi đẹp hơn sau này)
-            return Content($"❌ Lỗi: Không tìm thấy tài khoản nào có email: {email}. Hãy bảo họ đăng ký tài khoản trước!");
-        }
-
-        // 3. Nếu tìm thấy -> Thêm vào nhóm Admin
-        if (!await _userManager.IsInRoleAsync(user, "Admin"))
+        if (user != null && !await _userManager.IsInRoleAsync(user, "Admin"))
         {
             await _userManager.AddToRoleAsync(user, "Admin");
-            return Content($"✅ Thành công! Tài khoản {email} đã trở thành Admin. Hãy bảo họ đăng xuất và đăng nhập lại.");
+            TempData["Message"] = $"✅ Đã thăng chức {email} thành Quản trị viên!";
         }
-        else
+        return RedirectToAction(nameof(Dashboard)); // Load lại trang Dashboard
+    }
+
+// ==========================================================
+    // --- 3. HÀM GIÁNG CẤP (ĐÃ THÊM BẢO VỆ SUPER ADMIN) ---
+    // ==========================================================
+    [Authorize(Roles = "Admin")]
+    [HttpPost]
+    public async Task<IActionResult> DemoteAdmin(string email)
+    {
+        // 1. TƯỜNG LỬA: Bảo vệ Super Admin (Tài khoản gốc của bạn)
+        string superAdminEmail = "ttoan17123@gmail.com"; // <-- Sửa email của bạn ở đây nếu cần
+
+        if (email.ToLower() == superAdminEmail.ToLower())
         {
-            return Content($"ℹ️ Tài khoản {email} đã là Admin từ trước rồi!");
+            TempData["Message"] = "❌ Lỗi bảo mật: Không ai có quyền giáng cấp Quản trị viên tối cao!";
+            return RedirectToAction(nameof(Dashboard));
         }
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user != null && await _userManager.IsInRoleAsync(user, "Admin"))
+        {
+            // 2. Không cho phép tự giáng cấp chính mình
+            if (user.UserName == User.Identity.Name) 
+            {
+                TempData["Message"] = "❌ Lỗi: Bạn không thể tự giáng cấp chính mình!";
+                return RedirectToAction(nameof(Dashboard));
+            }
+
+            await _userManager.RemoveFromRoleAsync(user, "Admin");
+            TempData["Message"] = $"⬇️ Đã giáng cấp {email} về Khách hàng thường.";
+        }
+        return RedirectToAction(nameof(Dashboard));
     }
     public IActionResult Privacy()
     {

@@ -3,11 +3,19 @@
 }
 
 <div class="container py-4">
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+            <strong>Thông báo:</strong> @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <h2 class="text-primary fw-bold mb-4"><i class="bi bi-speedometer2"></i> Bảng điều khiển (Admin Dashboard)</h2>
 
-    <div class="row g-4">
+    <div class="row g-4 mb-5">
         <div class="col-md-3">
-            <div class="card text-white bg-success shadow h-100">
+            <div class="card text-white bg-success shadow h-100 border-0 rounded-3">
                 <div class="card-body">
                     <h5 class="card-title"><i class="bi bi-currency-dollar"></i> Tổng doanh thu</h5>
                     <p class="card-text display-6 fw-bold">@ViewBag.TotalRevenue.ToString("N0") đ</p>
@@ -17,7 +25,7 @@
         </div>
 
         <div class="col-md-3">
-            <div class="card text-white bg-warning shadow h-100">
+            <div class="card text-white bg-warning shadow h-100 border-0 rounded-3">
                 <div class="card-body">
                     <h5 class="card-title"><i class="bi bi-cart-check"></i> Tổng đơn hàng</h5>
                     <p class="card-text display-6 fw-bold">@ViewBag.TotalOrders</p>
@@ -27,7 +35,7 @@
         </div>
 
         <div class="col-md-3">
-            <div class="card text-white bg-primary shadow h-100">
+            <div class="card text-white bg-primary shadow h-100 border-0 rounded-3">
                 <div class="card-body">
                     <h5 class="card-title"><i class="bi bi-laptop"></i> Tổng sản phẩm</h5>
                     <p class="card-text display-6 fw-bold">@ViewBag.TotalProducts</p>
@@ -37,7 +45,7 @@
         </div>
 
         <div class="col-md-3">
-            <div class="card text-white bg-info shadow h-100">
+            <div class="card text-white bg-info shadow h-100 border-0 rounded-3">
                 <div class="card-body">
                     <h5 class="card-title"><i class="bi bi-people"></i> Tổng thành viên</h5>
                     <p class="card-text display-6 fw-bold">@ViewBag.TotalUsers</p>
@@ -47,33 +55,71 @@
         </div>
     </div>
 
-    <div class="mt-5">
-        <h4>Truy cập nhanh</h4>
-        <div class="list-group">
-            <a asp-controller="Bookings" asp-action="Index" class="list-group-item list-group-item-action">
-                👉 Xem danh sách đơn đặt hàng cần duyệt
-            </a>
-            <a asp-controller="Products" asp-action="Create" class="list-group-item list-group-item-action">
-                👉 Đăng sản phẩm mới
-            </a>
-        </div>
-    </div>
-</div>
-<div class="mt-5 mb-5">
-        <h4 class="text-danger"><i class="bi bi-person-badge"></i> Quản lý nhân sự</h4>
-        <div class="card border-danger shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Thêm Admin mới</h5>
-                <p class="card-text text-muted">Nhập email của thành viên bạn muốn cấp quyền Admin. <strong class="text-danger">Lưu ý: Họ phải đăng ký tài khoản trước.</strong></p>
-                
-                <form asp-action="PromoteAdmin" method="post" class="row g-3">
-                    <div class="col-auto flex-grow-1">
-                        <input type="email" name="email" class="form-control" placeholder="Nhập email người đó (ví dụ: ban_cua_toi@gmail.com)" required>
-                    </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-danger">Thăng chức ngay</button>
-                    </div>
-                </form>
+    <div class="mt-5 mb-5">
+        <h4 class="text-danger mb-3"><i class="bi bi-person-badge"></i> Quản lý Tài khoản & Phân quyền</h4>
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 py-3 border-bottom-0">Tài khoản (Email)</th>
+                                <th class="py-3 border-bottom-0">Vai trò hiện tại</th>
+                                <th class="text-end pe-4 py-3 border-bottom-0">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var userRole in ViewBag.UserRoles)
+                            {
+                                <tr>
+                                    <td class="ps-4 py-3 fw-bold text-dark">@userRole.Key</td>
+                                    
+                                    <td class="py-3">
+                                        @if (userRole.Value)
+                                        {
+                                            <span class="badge bg-danger fs-6 shadow-sm"><i class="bi bi-shield-lock"></i> Quản trị viên</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary fs-6 shadow-sm"><i class="bi bi-person"></i> Khách hàng</span>
+                                        }
+                                    </td>
+                                    
+                                    <td class="text-end pe-4 py-3">
+                                        @if (userRole.Value)
+                                        {
+                                            @if (userRole.Key.ToLower() == "ttoan17123@gmail.com") 
+                                            {
+                                                <span class="badge bg-dark fs-6 py-2 px-3 shadow-sm">
+                                                    <i class="bi bi-incognito text-warning"></i> Super Admin
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="DemoteAdmin" method="post" class="d-inline">
+                                                    <input type="hidden" name="email" value="@userRole.Key" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary" onclick="return confirm('Bạn chắc chắn muốn giáng cấp @userRole.Key xuống làm Khách hàng?');">
+                                                        <i class="bi bi-arrow-down-circle"></i> Giáng cấp
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="PromoteAdmin" method="post" class="d-inline">
+                                                <input type="hidden" name="email" value="@userRole.Key" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn muốn cấp quyền Quản trị viên cho @userRole.Key?');">
+                                                    <i class="bi bi-arrow-up-circle fw-bold"></i> Lên Admin
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+</div>
