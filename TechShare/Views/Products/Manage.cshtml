@@ -1,0 +1,86 @@
+@model IEnumerable<TechShare.Models.Product>
+
+@{
+    ViewData["Title"] = "Quản lý sản phẩm";
+}
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1 fw-bold"><i class="bi bi-box-seam me-2"></i> Quản lý sản phẩm</h2>
+                <p class="mb-0 opacity-75">Khu riêng cho admin thêm, sửa, xóa thiết bị cho thuê.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-action="Index" class="btn btn-outline-light fw-bold">
+                    <i class="bi bi-grid me-1"></i> Xem catalog
+                </a>
+                <a asp-action="Create" class="btn btn-light fw-bold">
+                    <i class="bi bi-plus-lg me-1"></i> Thêm sản phẩm
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-premium">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-premium mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Sản phẩm</th>
+                            <th>Mô tả</th>
+                            <th>Giá thuê</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/60" : item.ImageUrl)"
+                                             class="rounded-3 me-3" style="width: 60px; height: 45px; object-fit: cover;" />
+                                        <div>
+                                            <strong style="color: var(--primary);">@item.Name</strong>
+                                            <div class="small text-muted">@item.Category?.Name</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-muted" style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    @item.Description
+                                </td>
+                                <td class="fw-bold text-success">@item.PricePerDay.ToString("N0") đ/ngày</td>
+                                <td>
+                                    @if (item.IsAvailable)
+                                    {
+                                        <span class="badge-gradient-success">Sẵn sàng</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark border">Đang bận</span>
+                                    }
+                                </td>
+                                <td class="text-center pe-4">
+                                    <div class="d-flex gap-1 justify-content-center">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Sửa">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Chi tiết">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                            <i class="bi bi-trash3"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

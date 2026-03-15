@@ -14,6 +14,9 @@ namespace TechShare.Models
         public decimal TotalAmount { get; set; }
         public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
+        public bool IsDepositPaid { get; set; } = false;
+        public string? PaymentMethod { get; set; } // Ví dụ: "VNPay", "Tiền mặt"
+
         public int ProductId { get; set; }
         public virtual Product? Product { get; set; }
 

@@ -1,105 +1,168 @@
 @{
-    ViewData["Title"] = "Thống kê hệ thống";
+    ViewData["Title"] = "Dashboard";
+    var recentOrders = ViewBag.RecentOrders as List<TechShare.Models.Booking>;
+    var monthlyRevenue = ViewBag.MonthlyRevenue as List<dynamic>;
 }
 
 <div class="container py-4">
-    @if (TempData["Message"] != null)
-    {
-        <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
-            <strong>Thông báo:</strong> @TempData["Message"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h2 class="mb-1 fw-bold"><i class="bi bi-speedometer2 me-2"></i> Dashboard</h2>
+        <p class="mb-0 opacity-75">Tổng quan hoạt động hệ thống TechShare</p>
+    </div>
 
-    <h2 class="text-primary fw-bold mb-4"><i class="bi bi-speedometer2"></i> Bảng điều khiển (Admin Dashboard)</h2>
+    <!-- Stat Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-3 col-md-6 reveal">
+            <div class="stat-card bg-gradient-success">
+                <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+                <div class="stat-value" data-counter="@((int)ViewBag.TotalRevenue)">0</div>
+                <div class="stat-label">Tổng doanh thu (đ)</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 reveal">
+            <div class="stat-card bg-gradient-warning">
+                <div class="stat-icon"><i class="bi bi-cart-check"></i></div>
+                <div class="stat-value" data-counter="@ViewBag.TotalOrders">0</div>
+                <div class="stat-label">Tổng đơn hàng</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 reveal">
+            <div class="stat-card bg-gradient-primary">
+                <div class="stat-icon"><i class="bi bi-laptop"></i></div>
+                <div class="stat-value" data-counter="@ViewBag.TotalProducts">0</div>
+                <div class="stat-label">Sản phẩm</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 reveal">
+            <div class="stat-card bg-gradient-info">
+                <div class="stat-icon"><i class="bi bi-people"></i></div>
+                <div class="stat-value" data-counter="@ViewBag.TotalUsers">0</div>
+                <div class="stat-label">Thành viên</div>
+            </div>
+        </div>
+    </div>
 
     <div class="row g-4 mb-5">
-        <div class="col-md-3">
-            <div class="card text-white bg-success shadow h-100 border-0 rounded-3">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-currency-dollar"></i> Tổng doanh thu</h5>
-                    <p class="card-text display-6 fw-bold">@ViewBag.TotalRevenue.ToString("N0") đ</p>
-                    <small>Từ các đơn đã duyệt</small>
+        <!-- Monthly Revenue Chart -->
+        <div class="col-lg-7 reveal">
+            <div class="card-premium h-100">
+                <div class="card-header-gradient">
+                    <i class="bi bi-bar-chart-line me-2"></i> Doanh thu 6 tháng gần nhất
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="revenueChart" height="250"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card text-white bg-warning shadow h-100 border-0 rounded-3">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-cart-check"></i> Tổng đơn hàng</h5>
-                    <p class="card-text display-6 fw-bold">@ViewBag.TotalOrders</p>
-                    <small>Bao gồm cả chờ & hủy</small>
+        <!-- Pending Orders -->
+        <div class="col-lg-5 reveal">
+            <div class="card-premium h-100">
+                <div class="card-header-gradient d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history me-2"></i> Đơn hàng mới nhất</span>
+                    <span class="badge bg-light text-dark">@ViewBag.PendingOrders chờ duyệt</span>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-white bg-primary shadow h-100 border-0 rounded-3">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-laptop"></i> Tổng sản phẩm</h5>
-                    <p class="card-text display-6 fw-bold">@ViewBag.TotalProducts</p>
-                    <small>Thiết bị đang cho thuê</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-white bg-info shadow h-100 border-0 rounded-3">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-people"></i> Tổng thành viên</h5>
-                    <p class="card-text display-6 fw-bold">@ViewBag.TotalUsers</p>
-                    <small>Người dùng hệ thống</small>
+                <div class="card-body p-0">
+                    @if (recentOrders != null && recentOrders.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var order in recentOrders)
+                            {
+                                <div class="list-group-item px-4 py-3 border-0 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">@order.Product?.Name</h6>
+                                            <small class="text-muted">@(order.Renter?.UserName ?? "N/A") • @order.BookingDate.ToString("dd/MM/yyyy")</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="fw-bold text-success">@order.TotalAmount.ToString("N0") đ</span><br/>
+                                            @if (order.Status == TechShare.Models.BookingStatus.Pending)
+                                            {
+                                                <span class="badge-gradient-warning" style="font-size: 0.7rem;">Chờ duyệt</span>
+                                            }
+                                            else if (order.Status == TechShare.Models.BookingStatus.Approved)
+                                            {
+                                                <span class="badge-gradient-success" style="font-size: 0.7rem;">Đã duyệt</span>
+                                            }
+                                            else if (order.Status == TechShare.Models.BookingStatus.Completed)
+                                            {
+                                                <span class="badge-gradient-info" style="font-size: 0.7rem;">Hoàn thành</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-gradient-danger" style="font-size: 0.7rem;">Đã hủy</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem; color: var(--text-muted);"></i>
+                            <p class="text-muted mt-2 mb-0">Chưa có đơn hàng nào</p>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="mt-5 mb-5">
-        <h4 class="text-danger mb-3"><i class="bi bi-person-badge"></i> Quản lý Tài khoản & Phân quyền</h4>
-        <div class="card border-0 shadow-sm rounded-3">
+    <!-- User Management -->
+    <div class="reveal">
+        <div class="card-premium">
+            <div class="card-header-gradient">
+                <i class="bi bi-person-badge me-2"></i> Quản lý Tài khoản & Phân quyền
+            </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
+                    <table class="table table-premium mb-0">
+                        <thead>
                             <tr>
-                                <th class="ps-4 py-3 border-bottom-0">Tài khoản (Email)</th>
-                                <th class="py-3 border-bottom-0">Vai trò hiện tại</th>
-                                <th class="text-end pe-4 py-3 border-bottom-0">Thao tác</th>
+                                <th class="ps-4">Tài khoản</th>
+                                <th>Vai trò</th>
+                                <th class="text-end pe-4">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var userRole in ViewBag.UserRoles)
                             {
                                 <tr>
-                                    <td class="ps-4 py-3 fw-bold text-dark">@userRole.Key</td>
-                                    
-                                    <td class="py-3">
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <span class="user-avatar">@userRole.Key.ToString().Substring(0, 1).ToUpper()</span>
+                                            <span class="fw-bold">@userRole.Key</span>
+                                        </div>
+                                    </td>
+                                    <td>
                                         @if (userRole.Value)
                                         {
-                                            <span class="badge bg-danger fs-6 shadow-sm"><i class="bi bi-shield-lock"></i> Quản trị viên</span>
+                                            <span class="badge-gradient-danger"><i class="bi bi-shield-lock me-1"></i>Quản trị viên</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-secondary fs-6 shadow-sm"><i class="bi bi-person"></i> Khách hàng</span>
+                                            <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>Khách hàng</span>
                                         }
                                     </td>
-                                    
-                                    <td class="text-end pe-4 py-3">
+                                    <td class="text-end pe-4">
                                         @if (userRole.Value)
                                         {
-                                            @if (userRole.Key.ToLower() == "ttoan17123@gmail.com") 
+                                            @if (userRole.Key.ToString().ToLower() == "ttoan17123@gmail.com")
                                             {
-                                                <span class="badge bg-dark fs-6 py-2 px-3 shadow-sm">
-                                                    <i class="bi bi-incognito text-warning"></i> Super Admin
+                                                <span class="badge bg-dark px-3 py-2">
+                                                    <i class="bi bi-incognito text-warning me-1"></i> Super Admin
                                                 </span>
                                             }
                                             else
                                             {
                                                 <form asp-action="DemoteAdmin" method="post" class="d-inline">
                                                     <input type="hidden" name="email" value="@userRole.Key" />
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary" onclick="return confirm('Bạn chắc chắn muốn giáng cấp @userRole.Key xuống làm Khách hàng?');">
-                                                        <i class="bi bi-arrow-down-circle"></i> Giáng cấp
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary" 
+                                                            onclick="return confirm('Giáng cấp @userRole.Key xuống Khách hàng?');">
+                                                        <i class="bi bi-arrow-down-circle me-1"></i> Giáng cấp
                                                     </button>
                                                 </form>
                                             }
@@ -108,8 +171,9 @@
                                         {
                                             <form asp-action="PromoteAdmin" method="post" class="d-inline">
                                                 <input type="hidden" name="email" value="@userRole.Key" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn muốn cấp quyền Quản trị viên cho @userRole.Key?');">
-                                                    <i class="bi bi-arrow-up-circle fw-bold"></i> Lên Admin
+                                                <button type="submit" class="btn btn-sm btn-gradient"
+                                                        onclick="return confirm('Cấp quyền Admin cho @userRole.Key?');">
+                                                    <i class="bi bi-arrow-up-circle me-1"></i> Lên Admin
                                                 </button>
                                             </form>
                                         }
@@ -123,3 +187,51 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const monthlyData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(monthlyRevenue));
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: monthlyData.map(d => d.label),
+                datasets: [{
+                    label: 'Doanh thu (đ)',
+                    data: monthlyData.map(d => d.value),
+                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                    borderColor: '#667eea',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toLocaleString('vi-VN') + ' đ';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: function(value) { return value.toLocaleString('vi-VN'); }
+                        }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+}

@@ -24,7 +24,11 @@ namespace TechShare.Controllers
         // GET: Categories
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Categories.ToListAsync());
+            var categories = await _context.Categories
+                .Include(c => c.Products)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            return View(categories);
         }
 
         // GET: Categories/Details/5

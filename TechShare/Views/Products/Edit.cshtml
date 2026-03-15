@@ -1,79 +1,102 @@
 @model TechShare.Models.Product
 
 @{
-    ViewData["Title"] = "Chỉnh sửa Sản phẩm";
+    ViewData["Title"] = "Chỉnh sửa sản phẩm";
 }
 
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-warning text-dark text-center py-3">
-                    <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square"></i> Chỉnh sửa thông tin Sản phẩm</h4>
+        <div class="col-lg-9">
+            <div class="card-premium">
+                <div class="card-header-gradient text-center" style="background: var(--gradient-warning);">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i> Chỉnh sửa thông tin sản phẩm</h4>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-4 form-premium">
                     <form asp-action="Edit" enctype="multipart/form-data">
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                        
                         <input type="hidden" asp-for="Id" />
-                        <input type="hidden" asp-for="ImageUrl" /> 
+                        <input type="hidden" asp-for="ImageUrl" />
                         <input type="hidden" asp-for="OwnerId" />
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Name" class="form-label fw-bold">Tên thiết bị</label>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <label asp-for="Name" class="form-label">
+                                    <i class="bi bi-laptop me-1"></i> Tên thiết bị
+                                </label>
                                 <input asp-for="Name" class="form-control" />
                                 <span asp-validation-for="Name" class="text-danger small"></span>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="CategoryId" class="form-label fw-bold">Danh mục</label>
+                            <div class="col-md-5">
+                                <label asp-for="CategoryId" class="form-label">
+                                    <i class="bi bi-tag me-1"></i> Danh mục
+                                </label>
                                 <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.CategoryId"></select>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Description" class="form-label fw-bold">Mô tả chi tiết</label>
+                            <label asp-for="Description" class="form-label">
+                                <i class="bi bi-card-text me-1"></i> Mô tả chi tiết
+                            </label>
                             <textarea asp-for="Description" class="form-control" rows="3"></textarea>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="PricePerDay" class="form-label fw-bold">Giá thuê (VNĐ / ngày)</label>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="PricePerDay" class="form-label">
+                                    <i class="bi bi-cash me-1"></i> Giá thuê / ngày
+                                </label>
                                 <div class="input-group">
-                                    <input asp-for="PricePerDay" class="form-control" type="number" />
-                                    <span class="input-group-text">VNĐ</span>
+                                    <input asp-for="PricePerDay" class="form-control" type="number" min="0" />
+                                    <span class="input-group-text fw-bold">đ</span>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Location" class="form-label fw-bold">Khu vực / Phòng</label>
+                            <div class="col-md-6">
+                                <label asp-for="Location" class="form-label">
+                                    <i class="bi bi-geo-alt me-1"></i> Vị trí / Khu vực
+                                </label>
                                 <input asp-for="Location" class="form-control" />
                             </div>
                         </div>
 
-                        <div class="row mb-4 align-items-center bg-light p-3 rounded-3 mx-0">
-                            <div class="col-md-4 text-center">
-                                <label class="form-label fw-bold d-block text-muted small">Ảnh hiện tại</label>
-                                <img src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "https://via.placeholder.com/150" : Model.ImageUrl)" 
-                                     class="img-thumbnail shadow-sm" style="max-height: 120px; object-fit: cover;" />
-                            </div>
-                            <div class="col-md-8">
-                                <label class="form-label fw-bold text-primary"><i class="bi bi-image"></i> Thay ảnh mới (Nếu muốn)</label>
-                                <input type="file" name="imageFile" class="form-control" accept="image/*" />
-                                <small class="text-muted fst-italic mt-1 d-block">Bỏ trống ô này nếu bạn muốn giữ nguyên ảnh cũ.</small>
+                        <div class="bg-light rounded-3 p-3 mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-image me-1"></i> Ảnh sản phẩm
+                            </label>
+                            <div class="row align-items-center g-3">
+                                <div class="col-auto">
+                                    <img id="currentImg"
+                                         src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "https://via.placeholder.com/120x90?text=No+Image" : Model.ImageUrl)"
+                                         class="rounded-3" style="width:120px;height:90px;object-fit:cover;" />
+                                </div>
+                                <div class="col">
+                                    <input type="file" name="imageFile" id="imageFile" class="form-control" accept="image/*" />
+                                    <small class="text-muted mt-1 d-block">Để trống nếu muốn giữ nguyên ảnh cũ.</small>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="form-check form-switch mb-4">
-                            <input asp-for="IsAvailable" class="form-check-input" type="checkbox" role="switch">
-                            <label class="form-check-label fw-bold" asp-for="IsAvailable">Sẵn sàng cho thuê ngay</label>
+                        <div class="bg-light rounded-3 p-3 mb-4 d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="mb-0 fw-bold">Trạng thái sẵn sàng cho thuê</h6>
+                                <small class="text-muted">Tắt khi thiết bị đang bảo trì hoặc không cho thuê.</small>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input asp-for="IsAvailable" class="form-check-input" type="checkbox" role="switch" style="width:3rem;height:1.5rem;" />
+                            </div>
                         </div>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
-                                <i class="bi bi-x-circle"></i> Hủy & Quay lại
-                            </a>
-                            <button type="submit" class="btn btn-warning px-4 fw-bold">
-                                <i class="bi bi-check2-all"></i> Lưu thay đổi
+                        <div class="d-flex gap-2 justify-content-end">
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Manage" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Hủy</a>
+                            }
+                            else
+                            {
+                                <a asp-action="MyProducts" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Hủy</a>
+                            }
+                            <button type="submit" class="btn btn-gradient px-4">
+                                <i class="bi bi-check2-all me-1"></i> Lưu thay đổi
                             </button>
                         </div>
                     </form>
@@ -85,4 +108,16 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.getElementById('imageFile')?.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('currentImg').src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 }

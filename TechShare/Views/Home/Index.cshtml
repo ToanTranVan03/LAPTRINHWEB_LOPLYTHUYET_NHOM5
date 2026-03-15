@@ -1,60 +1,274 @@
-﻿@model IEnumerable<TechShare.Models.Product>
+@model TechShare.ViewModels.HomeLandingViewModel
 
 @{
     ViewData["Title"] = "Trang chủ";
 }
 
-<div class="text-center mb-5">
-    <h1 class="display-4">Chào mừng đến với TechShare</h1>
-    <p>Nền tảng chia sẻ thiết bị công nghệ hàng đầu</p>
-</div>
-<div class="card mb-4 shadow-sm border-0 bg-light">
-    <div class="card-body">
-        <form asp-action="Index" method="get" class="row g-3 align-items-center">
-            
-            <div class="col-md-6">
-                <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" 
-                       class="form-control" placeholder="🔍 Bạn muốn thuê gì hôm nay? (Ví dụ: Macbook, Sony...)" />
-            </div>
-
-            <div class="col-md-4">
-                <select name="categoryId" class="form-select" asp-items="ViewBag.Categories">
-                    <option value="">-- Tất cả danh mục --</option>
-                </select>
-            </div>
-
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
-            </div>
-        </form>
+<!-- ========== HERO SECTION ========== -->
+<div class="hero-section">
+    <div class="hero-particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
-</div>
-<div class="row">
-    @foreach (var item in Model)
-    {
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/300x200?text=No+Image" : item.ImageUrl)" 
-                     class="card-img-top" alt="@item.Name" style="height: 200px; object-fit: cover;">
-                
-                <div class="card-body">
-                    <h5 class="card-title">@item.Name</h5>
-                    <p class="card-text text-muted">@item.Description</p>
-                    <h6 class="text-primary font-weight-bold">@item.PricePerDay.ToString("N0") VNĐ / ngày</h6>
-                    
-                    <p class="small text-secondary">
-                        <i class="bi bi-geo-alt"></i> @item.Location | 
-                        <span class="badge bg-info">@item.Category?.Name</span>
+    <div class="container position-relative" style="z-index: 1;">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <div class="text-lg-start text-center">
+                    <span class="badge-gradient-info mb-3 d-inline-block">
+                        <i class="bi bi-lightning-charge-fill me-1"></i> Nền tảng thuê thiết bị công nghệ #1
+                    </span>
+                    <h1 class="hero-title mb-3">
+                        Thuê thiết bị thông minh,
+                        <br />
+                        <span class="hero-highlight">tiết kiệm chi phí</span>
+                    </h1>
+                    <p class="hero-subtitle mb-4">
+                        Trải nghiệm hàng ngàn thiết bị công nghệ cao cấp với giá thuê hợp lý.
+                        Từ laptop, máy ảnh đến gaming console — tất cả chỉ cách bạn một cú click.
                     </p>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                        <a asp-controller="Products" asp-action="Index" class="btn btn-light btn-lg fw-bold px-4 shadow-sm">
+                            <i class="bi bi-grid me-1"></i> Khám phá sản phẩm
+                        </a>
+                        <a asp-controller="Contact" asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                            <i class="bi bi-headset me-1"></i> Liên hệ hỗ trợ
+                        </a>
+                    </div>
                 </div>
-                
-                <div class="card-footer bg-white border-top-0">
-                    <a asp-controller="Bookings" asp-action="Create" asp-route-productId="@item.Id" 
-                       class="btn btn-success w-100">
-                        Thuê ngay
-                    </a>
+            </div>
+            <div class="col-lg-5">
+                <div class="hero-stats-card">
+                    <h5 class="fw-bold text-white mb-4">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Con số ấn tượng
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-icon"><i class="bi bi-box-seam"></i></div>
+                                <div class="hero-stat-number" data-counter="@Model.TotalProducts">0</div>
+                                <div class="hero-stat-label">Sản phẩm</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-icon"><i class="bi bi-tags"></i></div>
+                                <div class="hero-stat-number" data-counter="@Model.TotalCategories">0</div>
+                                <div class="hero-stat-label">Danh mục</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-icon"><i class="bi bi-people"></i></div>
+                                <div class="hero-stat-number" data-counter="@Model.TotalUsers">0</div>
+                                <div class="hero-stat-label">Người dùng</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-icon"><i class="bi bi-star"></i></div>
+                                <div class="hero-stat-number" data-counter="@Model.TotalReviews">0</div>
+                                <div class="hero-stat-label">Đánh giá</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    }
+    </div>
+</div>
+
+<!-- ========== HOW IT WORKS ========== -->
+<div class="container pb-5">
+    <div class="text-center mb-5">
+        <span class="badge-gradient-primary mb-2 d-inline-block">Quy trình</span>
+        <h2 class="fw-bold mb-2">Cách thức hoạt động</h2>
+        <p class="text-muted">Chỉ 4 bước đơn giản để thuê thiết bị công nghệ</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-3 col-md-6 reveal">
+            <div class="how-it-works-card text-center h-100">
+                <div class="hiw-step">1</div>
+                <div class="hiw-icon"><i class="bi bi-search"></i></div>
+                <h5 class="fw-bold mt-3">Tìm kiếm</h5>
+                <p class="text-muted small">Duyệt qua hàng trăm thiết bị, lọc theo danh mục, giá cả và đánh giá.</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 reveal">
+            <div class="how-it-works-card text-center h-100">
+                <div class="hiw-step">2</div>
+                <div class="hiw-icon"><i class="bi bi-calendar-check"></i></div>
+                <h5 class="fw-bold mt-3">Đặt lịch</h5>
+                <p class="text-muted small">Chọn ngày bắt đầu và kết thúc. Hệ thống tự động tính phí thuê.</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 reveal">
+            <div class="how-it-works-card text-center h-100">
+                <div class="hiw-step">3</div>
+                <div class="hiw-icon"><i class="bi bi-check-circle"></i></div>
+                <h5 class="fw-bold mt-3">Xác nhận</h5>
+                <p class="text-muted small">Admin duyệt đơn nhanh chóng. Bạn nhận thông báo qua hệ thống.</p>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 reveal">
+            <div class="how-it-works-card text-center h-100">
+                <div class="hiw-step">4</div>
+                <div class="hiw-icon"><i class="bi bi-emoji-smile"></i></div>
+                <h5 class="fw-bold mt-3">Sử dụng</h5>
+                <p class="text-muted small">Nhận thiết bị và trải nghiệm. Sau khi dùng xong, đánh giá để giúp cộng đồng.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== CATEGORIES ========== -->
+    <div class="text-center mb-4 mt-5">
+        <span class="badge-gradient-info mb-2 d-inline-block">Khám phá</span>
+        <h2 class="fw-bold mb-2">Danh mục thiết bị</h2>
+        <p class="text-muted">Tìm chính xác loại thiết bị bạn cần</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+        @{
+            var categoryIcons = new Dictionary<string, string>
+            {
+                { "Laptop", "bi-laptop" },
+                { "Máy ảnh", "bi-camera" },
+                { "Âm thanh", "bi-music-note-beamed" },
+                { "Console", "bi-controller" },
+                { "Máy chiếu", "bi-projector" },
+                { "Tablet", "bi-tablet" },
+                { "Điện thoại", "bi-phone" },
+                { "Thiết bị mạng", "bi-router" },
+            };
+            var categoryColors = new[] { "#667eea", "#11998e", "#f2994a", "#eb3349", "#2193b0", "#764ba2", "#38ef7d", "#f093fb" };
+            int colorIdx = 0;
+        }
+        @foreach (var category in Model.HighlightCategories)
+        {
+            var icon = categoryIcons.FirstOrDefault(k => category.Name.Contains(k.Key)).Value ?? "bi-collection";
+            var color = categoryColors[colorIdx % categoryColors.Length];
+            colorIdx++;
+            <div class="col-lg-3 col-md-4 col-6 reveal">
+                <a asp-controller="Products" asp-action="Index" asp-route-categoryId="@category.Id" class="text-decoration-none">
+                    <div class="category-card-new h-100">
+                        <div class="category-icon-wrapper" style="background: linear-gradient(135deg, @(color)22, @(color)11);">
+                            <i class="bi @icon" style="color: @color; font-size: 2rem;"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mt-3 mb-1">@category.Name</h6>
+                        <span class="text-muted small">@category.ProductCount sản phẩm</span>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- ========== WHY CHOOSE US ========== -->
+    <div class="text-center mb-4 mt-5">
+        <span class="badge-gradient-success mb-2 d-inline-block">Lợi ích</span>
+        <h2 class="fw-bold mb-2">Tại sao chọn TechShare?</h2>
+        <p class="text-muted">Nền tảng được tin tưởng bởi hàng ngàn người dùng</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-4 col-md-6 reveal">
+            <div class="benefit-card h-100">
+                <div class="benefit-icon bg-gradient-primary">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h5 class="fw-bold mt-3">An toàn & Bảo mật</h5>
+                <p class="text-muted">Hệ thống xác thực KYC đảm bảo danh tính người dùng. Mọi giao dịch đều được giám sát và bảo vệ.</p>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 reveal">
+            <div class="benefit-card h-100">
+                <div class="benefit-icon bg-gradient-success">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <h5 class="fw-bold mt-3">Giá cả hợp lý</h5>
+                <p class="text-muted">Tiết kiệm đến 90% so với mua mới. Thuê ngày, thuê tuần hay thuê tháng đều có mức giá tốt nhất.</p>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-12 reveal">
+            <div class="benefit-card h-100">
+                <div class="benefit-icon bg-gradient-info">
+                    <i class="bi bi-headset"></i>
+                </div>
+                <h5 class="fw-bold mt-3">Hỗ trợ 24/7</h5>
+                <p class="text-muted">Đội ngũ hỗ trợ luôn sẵn sàng giải đáp thắc mắc và xử lý mọi vấn đề phát sinh nhanh chóng.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TESTIMONIALS ========== -->
+    <div class="text-center mb-4 mt-5">
+        <span class="badge-gradient-warning mb-2 d-inline-block">Đánh giá</span>
+        <h2 class="fw-bold mb-2">Khách hàng nói gì?</h2>
+        <p class="text-muted">Phản hồi từ những người đã sử dụng dịch vụ</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-4 col-md-6 reveal">
+            <div class="testimonial-card h-100">
+                <div class="testimonial-stars mb-3">
+                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                </div>
+                <p class="testimonial-text">"Dịch vụ tuyệt vời! Thuê MacBook Pro cho dự án ngắn hạn, máy mới và chạy mượt. Tiết kiệm rất nhiều so với mua mới."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">NA</div>
+                    <div>
+                        <div class="fw-bold">Nguyễn Văn A</div>
+                        <div class="small text-muted">Designer tự do</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 reveal">
+            <div class="testimonial-card h-100">
+                <div class="testimonial-stars mb-3">
+                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                </div>
+                <p class="testimonial-text">"Thuê Sony A7R cho buổi chụp sự kiện. Máy được bảo dưỡng tốt, giao hàng đúng hẹn. Sẽ quay lại thuê tiếp!"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">TB</div>
+                    <div>
+                        <div class="fw-bold">Trần Thị B</div>
+                        <div class="small text-muted">Photographer</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-12 reveal">
+            <div class="testimonial-card h-100">
+                <div class="testimonial-stars mb-3">
+                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i>
+                </div>
+                <p class="testimonial-text">"PS5 thuê về chơi cuối tuần với bạn bè, trải nghiệm rất đáng. Giá chỉ bằng 2 ly trà sữa mỗi ngày!"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">LC</div>
+                    <div>
+                        <div class="fw-bold">Lê Văn C</div>
+                        <div class="small text-muted">Sinh viên IT</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== CTA SECTION ========== -->
+    <div class="cta-section reveal">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h3 class="fw-bold text-white mb-2">Sẵn sàng trải nghiệm?</h3>
+                <p class="text-white-50 mb-0">Đăng ký tài khoản miễn phí ngay hôm nay và bắt đầu thuê thiết bị công nghệ yêu thích.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <a asp-controller="Products" asp-action="Index" class="btn btn-light btn-lg fw-bold px-4">
+                    <i class="bi bi-rocket-takeoff me-1"></i> Bắt đầu ngay
+                </a>
+            </div>
+        </div>
+    </div>
 </div>

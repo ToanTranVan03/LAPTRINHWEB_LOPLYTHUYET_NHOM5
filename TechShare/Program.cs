@@ -1,24 +1,27 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
 using TechShare.Data;
 using TechShare.Models;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using TechShare.Services;
+using TechShare.Hubs;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Thêm dịch vụ MVC và Razor Pages
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddSignalR();
 
-// 2. Kết nối CSDL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// 3. Đăng ký Identity (User & Role) - GIỮ LẠI CÁI NÀY
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => 
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    // Cấu hình password đơn giản cho dễ test
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
     options.Password.RequireNonAlphanumeric = false;
@@ -27,9 +30,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
-// Đăng ký dịch vụ gửi email ảo
+
 builder.Services.AddTransient<IEmailSender, EmailSender>();
-// 4. Sửa lỗi đường dẫn khi chưa đăng nhập (Quan trọng cho Identity)
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Identity/Account/Login";
@@ -39,7 +42,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// Cấu hình Pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -51,7 +53,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Kích hoạt xác thực & phân quyền
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -62,6 +63,20 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.MapRazorPages(); // Kích hoạt trang Login/Register
+app.MapRazorPages();
+app.MapHub<ChatHub>("/chatHub");
+
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        await SeedData.InitializeAsync(scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Loi khi seed du lieu mau.");
+    }
+}
 
 app.Run();

@@ -1,60 +1,115 @@
 @model TechShare.Models.Booking
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Chi tiết đơn hàng";
 }
 
-<h1>Details</h1>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-premium">
+                <div class="card-header-gradient text-center">
+                    <h4 class="mb-0"><i class="bi bi-receipt me-2"></i> Chi tiết đơn hàng #@Model.Id</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="bg-light rounded-3 p-3">
+                                <small class="text-muted d-block mb-1">Sản phẩm</small>
+                                <strong class="fs-5" style="color: var(--primary);">@Model.Product?.Name</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-light rounded-3 p-3">
+                                <small class="text-muted d-block mb-1">Người thuê</small>
+                                <strong>@(Model.Renter?.UserName ?? Model.RenterId)</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-light rounded-3 p-3 text-center">
+                                <small class="text-muted d-block mb-1">Ngày đặt</small>
+                                <strong>@Model.BookingDate.ToString("dd/MM/yyyy")</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-light rounded-3 p-3 text-center">
+                                <small class="text-muted d-block mb-1">Ngày nhận</small>
+                                <strong>@Model.StartDate.ToString("dd/MM/yyyy")</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-light rounded-3 p-3 text-center">
+                                <small class="text-muted d-block mb-1">Ngày trả</small>
+                                <strong>@Model.EndDate.ToString("dd/MM/yyyy")</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-light rounded-3 p-3 text-center">
+                                <small class="text-muted d-block mb-1">Tổng tiền</small>
+                                <strong class="fs-4 fw-bold" style="color: var(--primary);">@Model.TotalAmount.ToString("N0") đ</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-light rounded-3 p-3 text-center">
+                                <small class="text-muted d-block mb-1">Trạng thái</small>
+                                @if (Model.Status == TechShare.Models.BookingStatus.Pending)
+                                {
+                                    <span class="badge-gradient-warning fs-6">Chờ duyệt</span>
+                                }
+                                else if (Model.Status == TechShare.Models.BookingStatus.Approved)
+                                {
+                                    <span class="badge-gradient-success fs-6">Đã duyệt</span>
+                                }
+                                else if (Model.Status == TechShare.Models.BookingStatus.Completed)
+                                {
+                                    <span class="badge-gradient-info fs-6">Hoàn thành</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-gradient-danger fs-6">Đã hủy</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-4 mt-2">
+                        <div class="col-md-12">
+                            <div class="bg-light rounded-3 p-3">
+                                <small class="text-muted d-block mb-1">Thanh toán</small>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        @if (Model.IsDepositPaid)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Đã thanh toán cọc (@Model.PaymentMethod)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary"><i class="bi bi-clock me-1"></i> Chưa thanh toán</span>
+                                        }
+                                    </div>
+                                    @if (!Model.IsDepositPaid && Model.RenterId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+                                    {
+                                        <a asp-controller="Payment" asp-action="Checkout" asp-route-bookingId="@Model.Id" class="btn btn-sm btn-gradient shadow-sm">
+                                            <i class="bi bi-credit-card me-1"></i> Thanh toán VNPay Demo
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-<div>
-    <h4>Booking</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.BookingDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.BookingDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StartDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StartDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EndDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EndDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TotalAmount)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TotalAmount)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Product)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Product.Location)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Renter)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Renter.Id)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+                    <div class="d-flex gap-2 justify-content-center mt-4">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-gradient">
+                                <i class="bi bi-pencil me-1"></i> Chỉnh sửa
+                            </a>
+                        }
+                        <a asp-action="MyBookings" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

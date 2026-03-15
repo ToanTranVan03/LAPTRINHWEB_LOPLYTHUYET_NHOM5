@@ -1,78 +1,110 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="TechShare - Nền tảng chia sẻ và cho thuê thiết bị công nghệ hàng đầu Việt Nam" />
     <title>@ViewData["Title"] - TechShare</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/TechShare.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 0 !important; /* Xóa khoảng trắng mặc định của ASP.NET */
-            background-color: #f8f9fa; /* Nền xám nhạt */
-            font-family: 'Inter', sans-serif;
-        }
-        .content-wrapper {
-            flex: 1 0 auto; /* Tự động đẩy phần nội dung dài ra để dồn footer xuống đáy */
-        }
-        .custom-footer {
-            flex-shrink: 0;
-            position: relative !important; /* Xóa lỗi lơ lửng của footer cũ */
-            width: 100%;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    }
+
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom shadow-sm py-3 mb-4">
-            <div class="container-fluid px-4">
-                <a class="navbar-brand fw-bold text-primary fs-4" asp-area="" asp-controller="Home" asp-action="Index">
+        <nav class="navbar navbar-expand-lg navbar-glass fixed-top">
+            <div class="container">
+                <a class="navbar-brand navbar-brand-logo" asp-area="" asp-controller="Home" asp-action="Index">
                     <i class="bi bi-share-fill me-1"></i> TechShare
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                        aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1 fw-medium">
+                <div class="collapse navbar-collapse" id="navbarMain">
+                    <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link text-dark px-3 hover-primary" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                            <a class="nav-link nav-link-custom @(currentController == "Home" && currentAction == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house-heart me-1"></i> Trang chủ
+                            </a>
                         </li>
-                        
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom @(currentController == "Products" && currentAction == "Index" ? "active" : "")" asp-controller="Products" asp-action="Index">
+                                <i class="bi bi-grid me-1"></i> Sản phẩm
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom @(currentController == "Marketplace" ? "active" : "")" asp-controller="Marketplace" asp-action="Index">
+                                <i class="bi bi-shop me-1"></i> Thanh lý
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom @(currentController == "Home" && currentAction == "About" ? "active" : "")" asp-controller="Home" asp-action="About">
+                                <i class="bi bi-building me-1"></i> Về chúng tôi
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom @(currentController == "Home" && currentAction == "FAQ" ? "active" : "")" asp-controller="Home" asp-action="FAQ">
+                                <i class="bi bi-question-circle me-1"></i> FAQ
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom @(currentController == "Contact" && currentAction == "Index" ? "active" : "")" asp-controller="Contact" asp-action="Index">
+                                <i class="bi bi-headset me-1"></i> Liên hệ
+                            </a>
+                        </li>
                         @if (User.IsInRole("Admin"))
                         {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-danger fw-bold px-3" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-shield-lock"></i> Quản trị
+                            <li class="nav-item dropdown dropdown-premium">
+                                <a class="nav-link nav-link-custom dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-shield-lock me-1"></i> Quản trị
                                 </a>
-                                <ul class="dropdown-menu shadow border-0" aria-labelledby="adminMenu">
-                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="Dashboard"><i class="bi bi-graph-up me-2"></i>Thống kê</a></li>
+                                <ul class="dropdown-menu" aria-labelledby="adminMenu">
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="Dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" asp-controller="Categories" asp-action="Index">Quản lý Danh mục</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Products" asp-action="Index">Quản lý Sản phẩm</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Index">Quản lý Đặt lịch</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Categories" asp-action="Index"><i class="bi bi-tags me-2"></i>Danh mục</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Products" asp-action="Manage"><i class="bi bi-box-seam me-2"></i>Sản phẩm</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Index"><i class="bi bi-calendar-check me-2"></i>Đặt lịch</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Contact" asp-action="Manage"><i class="bi bi-envelope-open me-2"></i>Tin nhắn</a></li>
                                 </ul>
                             </li>
                         }
-
-                        @if (User.Identity.IsAuthenticated)
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-primary fw-bold px-3" asp-controller="Bookings" asp-action="MyBookings">
-                                    <i class="bi bi-box-seam me-1"></i> Đơn hàng của tôi
+                            <li class="nav-item dropdown dropdown-premium">
+                                <a class="nav-link nav-link-custom dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle me-1"></i> Cá nhân
                                 </a>
+                                <ul class="dropdown-menu" aria-labelledby="userMenu">
+                                    <li>
+                                        <a class="dropdown-item @(currentController == "Bookings" && currentAction == "MyBookings" ? "active" : "")" asp-controller="Bookings" asp-action="MyBookings">
+                                            <i class="bi bi-bag-check me-2"></i> Đơn thuê của tôi
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item @(currentController == "Products" && currentAction == "MyProducts" ? "active" : "")" asp-controller="Products" asp-action="MyProducts">
+                                            <i class="bi bi-box-arrow-up-right me-2"></i> Thiết bị cho thuê 
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item @(currentController == "Marketplace" && currentAction == "MyListings" ? "active" : "")" asp-controller="Marketplace" asp-action="MyListings">
+                                            <i class="bi bi-shop-window me-2"></i> Thiết bị thanh lý
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item @(currentController == "Wishlist" ? "active" : "")" asp-controller="Wishlist" asp-action="Index">
+                                            <i class="bi bi-heart me-2"></i> Yêu thích
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
                         }
                     </ul>
@@ -82,55 +114,71 @@
         </nav>
     </header>
 
-    <div class="content-wrapper">
-        <div class="container">
-            <main role="main" class="pb-5">
-                @RenderBody()
-            </main>
-        </div>
-    </div>
-
-    <footer class="bg-dark text-light py-5 custom-footer">
-        <div class="container">
-            <div class="row gy-4">
-                <div class="col-lg-5 col-md-12 pe-lg-5">
-                    <h4 class="fw-bold text-primary mb-3"><i class="bi bi-share-fill"></i> TechShare</h4>
-                    <p class="text-muted" style="line-height: 1.8;">
-                        Nền tảng chia sẻ và cho thuê thiết bị công nghệ hàng đầu. Giúp bạn trải nghiệm các sản phẩm đỉnh cao với chi phí tiết kiệm nhất.
-                    </p>
-                    <div class="d-flex gap-3 mt-4">
-                        <a href="#" class="text-light fs-5"><i class="bi bi-facebook"></i></a>
-                        <a href="#" class="text-light fs-5"><i class="bi bi-youtube"></i></a>
-                        <a href="#" class="text-light fs-5"><i class="bi bi-github"></i></a>
+    <div class="content-wrapper" style="margin-top: 76px;">
+        <main role="main">
+            @if (TempData["Message"] != null)
+            {
+                <div class="container mt-3">
+                    <div class="alert alert-toast alert-info alert-dismissible fade show" role="alert">
+                        <i class="bi bi-info-circle me-2"></i> @TempData["Message"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 </div>
+            }
+            @RenderBody()
+        </main>
+    </div>
 
-                <div class="col-lg-3 col-md-6">
-                    <h5 class="fw-bold mb-3 text-white">Chính sách</h5>
+    <footer class="footer-premium">
+        <div class="container">
+            <div class="row gy-4">
+                <div class="col-lg-4 col-md-12 pe-lg-5">
+                    <h4 class="footer-brand mb-3"><i class="bi bi-share-fill"></i> TechShare</h4>
+                    <p style="color: rgba(255,255,255,0.6); line-height: 1.8;">
+                        Nền tảng chia sẻ và cho thuê thiết bị công nghệ hàng đầu.
+                        Trải nghiệm sản phẩm đỉnh cao với chi phí tiết kiệm nhất.
+                    </p>
+                    <div class="footer-social d-flex gap-2 mt-3">
+                        <a href="#"><i class="bi bi-facebook"></i></a>
+                        <a href="#"><i class="bi bi-youtube"></i></a>
+                        <a href="#"><i class="bi bi-github"></i></a>
+                        <a href="#"><i class="bi bi-tiktok"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <h6 class="text-white fw-bold mb-3">Khám phá</h6>
                     <ul class="list-unstyled d-flex flex-column gap-2">
-                        <li><a href="/" class="text-decoration-none text-muted custom-link">Về chúng tôi</a></li>
-                        <li><a href="/" class="text-decoration-none text-muted custom-link">Quy định thuê đồ</a></li>
-                        <li><a href="/Home/Privacy" class="text-decoration-none text-muted custom-link">Chính sách bảo mật</a></li>
+                        <li><a asp-controller="Products" asp-action="Index" class="footer-link">Sản phẩm</a></li>
+                        <li><a asp-controller="Home" asp-action="About" class="footer-link">Về chúng tôi</a></li>
+                        <li><a asp-controller="Home" asp-action="FAQ" class="footer-link">Câu hỏi thường gặp</a></li>
                     </ul>
                 </div>
-
-                <div class="col-lg-4 col-md-6">
-                    <h5 class="fw-bold mb-3 text-white">Liên hệ trực tiếp</h5>
-                    <ul class="list-unstyled d-flex flex-column gap-3 text-muted">
-                        <li><i class="bi bi-geo-alt text-primary me-2"></i> Nam Định, Việt Nam</li>
-                        <li><i class="bi bi-envelope text-primary me-2"></i> contact@techshare.com</li>
-                        <li><i class="bi bi-telephone text-primary me-2"></i> +84 123 456 789</li>
+                <div class="col-lg-2 col-md-4">
+                    <h6 class="text-white fw-bold mb-3">Chính sách</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2">
+                        <li><a asp-controller="Home" asp-action="Privacy" class="footer-link">Bảo mật</a></li>
+                        <li><a asp-controller="Contact" asp-action="Index" class="footer-link">Hỗ trợ</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <h6 class="text-white fw-bold mb-3">Liên hệ</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2" style="color: rgba(255,255,255,0.6);">
+                        <li><i class="bi bi-geo-alt me-2" style="color: var(--primary);"></i> Nam Định, Việt Nam</li>
+                        <li><i class="bi bi-envelope me-2" style="color: var(--primary);"></i> contact@techshare.com</li>
+                        <li><i class="bi bi-telephone me-2" style="color: var(--primary);"></i> +84 123 456 789</li>
                     </ul>
                 </div>
             </div>
-            
-            <hr class="border-secondary mt-5 mb-4" />
-            
-            <div class="text-center text-muted small">
-                &copy; 2026 - TechShare Platform. Bản quyền thuộc về Trần Văn Đình.
+            <hr style="border-color: rgba(255,255,255,0.1);" class="mt-4 mb-3" />
+            <div class="text-center small" style="color: rgba(255,255,255,0.4);">
+                &copy; 2026 TechShare Platform. Bản quyền thuộc về Trần Văn Đình.
             </div>
         </div>
     </footer>
+
+    <button id="backToTop" class="back-to-top" title="Lên đầu trang">
+        <i class="bi bi-chevron-up"></i>
+    </button>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

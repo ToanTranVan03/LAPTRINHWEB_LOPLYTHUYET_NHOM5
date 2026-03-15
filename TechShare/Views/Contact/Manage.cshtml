@@ -1,0 +1,99 @@
+@model IEnumerable<TechShare.Models.ContactMessage>
+
+@{
+    ViewData["Title"] = "Quản lý tin nhắn";
+}
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-1"><i class="bi bi-envelope-open me-2"></i>Quản lý tin nhắn</h1>
+                <p class="mb-0 opacity-75">Xem và phản hồi tin nhắn từ khách hàng</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Filter Pills -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a asp-action="Manage" class="btn @(ViewBag.CurrentStatus == null ? "btn-gradient" : "btn-outline-secondary") btn-sm">
+            <i class="bi bi-inbox me-1"></i> Tất cả
+        </a>
+        <a asp-action="Manage" asp-route-status="New" class="btn @(ViewBag.CurrentStatus == "New" ? "btn-gradient" : "btn-outline-secondary") btn-sm">
+            <i class="bi bi-circle-fill text-danger me-1" style="font-size:0.5rem;"></i> Mới (@ViewBag.TotalNew)
+        </a>
+        <a asp-action="Manage" asp-route-status="Read" class="btn @(ViewBag.CurrentStatus == "Read" ? "btn-gradient" : "btn-outline-secondary") btn-sm">
+            <i class="bi bi-eye me-1"></i> Đã đọc (@ViewBag.TotalRead)
+        </a>
+        <a asp-action="Manage" asp-route-status="Replied" class="btn @(ViewBag.CurrentStatus == "Replied" ? "btn-gradient" : "btn-outline-secondary") btn-sm">
+            <i class="bi bi-reply me-1"></i> Đã phản hồi (@ViewBag.TotalReplied)
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-envelope-paper"></i></div>
+            <h5>Chưa có tin nhắn nào</h5>
+            <p class="text-muted">Khi khách hàng gửi tin nhắn, chúng sẽ hiển thị tại đây.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card-premium">
+            <div class="table-responsive">
+                <table class="table table-premium mb-0">
+                    <thead>
+                        <tr>
+                            <th>Trạng thái</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Chủ đề</th>
+                            <th>Ngày gửi</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @switch (item.Status)
+                                    {
+                                        case TechShare.Models.ContactStatus.New:
+                                            <span class="badge-gradient-danger">Mới</span>
+                                            break;
+                                        case TechShare.Models.ContactStatus.Read:
+                                            <span class="badge-gradient-warning">Đã đọc</span>
+                                            break;
+                                        case TechShare.Models.ContactStatus.Replied:
+                                            <span class="badge-gradient-success">Đã trả lời</span>
+                                            break;
+                                        default:
+                                            <span class="badge-gradient-info">@item.Status</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="fw-semibold">@item.FullName</td>
+                                <td><span class="text-muted">@item.Email</span></td>
+                                <td>@item.Subject</td>
+                                <td><span class="small text-muted">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span></td>
+                                <td class="text-end">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa tin nhắn này?')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

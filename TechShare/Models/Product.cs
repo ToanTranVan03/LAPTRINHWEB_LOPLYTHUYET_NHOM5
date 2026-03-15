@@ -15,6 +15,13 @@ namespace TechShare.Models
         [Required]
         public string Location { get; set; } = string.Empty; // Vị trí để tìm kiếm gần đây
         
+        // Dành cho tính năng bản đồ và đề xuất theo khoảng cách
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+
+        [NotMapped]
+        public double? DistanceKm { get; set; }
+
         public bool IsAvailable { get; set; } = true;
 
         // Khóa ngoại
@@ -24,5 +31,8 @@ namespace TechShare.Models
         public string? OwnerId { get; set; }
         [ForeignKey("OwnerId")]
         public virtual ApplicationUser? Owner { get; set; }
+
+        // Đánh giá sản phẩm
+        public virtual ICollection<Review>? Reviews { get; set; }
     }
 }

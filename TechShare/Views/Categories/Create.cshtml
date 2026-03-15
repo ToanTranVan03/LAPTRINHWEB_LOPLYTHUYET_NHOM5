@@ -1,32 +1,33 @@
 @model TechShare.Models.Category
 
 @{
-    ViewData["Title"] = "Thêm Danh mục mới";
+    ViewData["Title"] = "Thêm danh mục";
 }
 
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-primary text-white text-center py-3">
-                    <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Thêm Danh mục mới</h4>
+        <div class="col-lg-6">
+            <div class="card-premium">
+                <div class="card-header-gradient text-center">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i> Thêm danh mục mới</h4>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-4 form-premium">
                     <form asp-action="Create">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                        
-                        <div class="form-group mb-4">
-                            <label asp-for="Name" class="form-label fw-bold">Tên danh mục</label>
-                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Ví dụ: Laptop, Máy ảnh, Xe máy..." />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: none;"></div>
+                        <div class="mb-4">
+                            <label asp-for="Name" class="form-label">
+                                <i class="bi bi-tag me-1"></i> Tên danh mục
+                            </label>
+                            <input asp-for="Name" class="form-control form-control-lg" 
+                                   placeholder="Ví dụ: Laptop, Máy ảnh, Drone..." />
                             <span asp-validation-for="Name" class="text-danger small"></span>
                         </div>
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
-                                <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Hủy
                             </a>
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="bi bi-save"></i> Tạo mới
+                            <button type="submit" class="btn btn-gradient px-4">
+                                <i class="bi bi-check2 me-1"></i> Tạo mới
                             </button>
                         </div>
                     </form>

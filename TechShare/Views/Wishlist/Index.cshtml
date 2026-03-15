@@ -1,0 +1,84 @@
+@model IEnumerable<TechShare.Models.Wishlist>
+
+@{
+    ViewData["Title"] = "Danh sách yêu thích";
+}
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <h1 class="mb-1"><i class="bi bi-heart-fill me-2"></i>Danh sách yêu thích</h1>
+        <p class="mb-0 opacity-75">Những sản phẩm bạn đã lưu để xem sau</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-heart"></i></div>
+            <h5>Chưa có sản phẩm yêu thích</h5>
+            <p class="text-muted">Nhấn nút <i class="bi bi-heart text-danger"></i> trên các sản phẩm để thêm vào danh sách.</p>
+            <a asp-controller="Products" asp-action="Index" class="btn btn-gradient">
+                <i class="bi bi-grid me-1"></i> Khám phá sản phẩm
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                var product = item.Product!;
+                var avgRating = product.Reviews != null && product.Reviews.Any() ? product.Reviews.Average(r => r.Rating) : 0;
+                var reviewCount = product.Reviews?.Count ?? 0;
+
+                <div class="col-lg-4 col-md-6 reveal">
+                    <div class="product-card card">
+                        <div class="card-img-wrapper">
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "https://via.placeholder.com/400x250?text=No+Image" : product.ImageUrl)"
+                                 class="card-img-top" alt="@product.Name">
+                            <div class="card-img-overlay-badge">
+                                <span class="price-badge">@product.PricePerDay.ToString("N0") đ/ngày</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <h5 class="card-title mb-0">@product.Name</h5>
+                                <span class="badge-gradient-info">@product.Category?.Name</span>
+                            </div>
+                            <p class="card-text">@product.Description</p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="stars">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="bi @(i <= Math.Round(avgRating) ? "bi-star-fill" : "bi-star")"></i>
+                                    }
+                                    <span class="text-muted ms-1 small">(@reviewCount)</span>
+                                </div>
+                                <span class="small text-muted">
+                                    <i class="bi bi-clock me-1"></i>@item.AddedAt.ToString("dd/MM")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0 p-3 pt-0">
+                            <div class="d-flex gap-2">
+                                <a asp-controller="Products" asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-secondary flex-fill">
+                                    <i class="bi bi-eye me-1"></i> Chi tiết
+                                </a>
+                                <form asp-controller="Wishlist" asp-action="Toggle" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="productId" value="@product.Id" />
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                    <button type="submit" class="btn btn-outline-danger" title="Bỏ yêu thích">
+                                        <i class="bi bi-heart-fill"></i>
+                                    </button>
+                                </form>
+                                <a asp-controller="Bookings" asp-action="Create" asp-route-productId="@product.Id" class="btn btn-gradient-success flex-fill">
+                                    <i class="bi bi-bag-plus me-1"></i> Thuê
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

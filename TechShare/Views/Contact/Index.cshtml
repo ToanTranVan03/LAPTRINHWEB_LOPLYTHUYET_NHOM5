@@ -1,0 +1,106 @@
+@model TechShare.Models.ContactMessage
+
+@{
+    ViewData["Title"] = "Liên hệ hỗ trợ";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="page-header mb-4">
+                <h1 class="mb-1"><i class="bi bi-headset me-2"></i>Liên hệ hỗ trợ</h1>
+                <p class="mb-0 opacity-75">Gửi tin nhắn cho chúng tôi, đội ngũ hỗ trợ sẽ phản hồi sớm nhất</p>
+            </div>
+
+            <div class="row g-4">
+                <!-- INFO CARDS -->
+                <div class="col-lg-4">
+                    <div class="contact-info-card mb-3">
+                        <div class="contact-info-icon bg-gradient-primary">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+                        <h6 class="fw-bold mt-2 mb-1">Email</h6>
+                        <p class="text-muted small mb-0">contact@techshare.com</p>
+                    </div>
+                    <div class="contact-info-card mb-3">
+                        <div class="contact-info-icon bg-gradient-success">
+                            <i class="bi bi-telephone"></i>
+                        </div>
+                        <h6 class="fw-bold mt-2 mb-1">Hotline</h6>
+                        <p class="text-muted small mb-0">+84 123 456 789</p>
+                    </div>
+                    <div class="contact-info-card mb-3">
+                        <div class="contact-info-icon bg-gradient-info">
+                            <i class="bi bi-geo-alt"></i>
+                        </div>
+                        <h6 class="fw-bold mt-2 mb-1">Địa chỉ</h6>
+                        <p class="text-muted small mb-0">Nam Định, Việt Nam</p>
+                    </div>
+                    <div class="contact-info-card">
+                        <div class="contact-info-icon bg-gradient-warning">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <h6 class="fw-bold mt-2 mb-1">Giờ làm việc</h6>
+                        <p class="text-muted small mb-0">T2 - T7: 8:00 - 22:00</p>
+                    </div>
+                </div>
+
+                <!-- FORM -->
+                <div class="col-lg-8">
+                    <div class="card-premium p-4">
+                        <h5 class="fw-bold mb-4"><i class="bi bi-pencil-square me-2" style="color: var(--primary);"></i>Gửi tin nhắn</h5>
+                        <form asp-action="Index" method="post" class="form-premium">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:none;"></div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="FullName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                    <input asp-for="FullName" class="form-control" placeholder="Nhập họ tên" value="@ViewBag.UserFullName" />
+                                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Email" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input asp-for="Email" class="form-control" placeholder="email@example.com" value="@ViewBag.UserEmail" />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                    <input asp-for="Phone" class="form-control" placeholder="0912 345 678" />
+                                    <span asp-validation-for="Phone" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Subject" class="form-label">Chủ đề <span class="text-danger">*</span></label>
+                                    <select asp-for="Subject" class="form-select">
+                                        <option value="">-- Chọn chủ đề --</option>
+                                        <option value="Hỏi về sản phẩm">Hỏi về sản phẩm</option>
+                                        <option value="Vấn đề đặt hàng">Vấn đề đặt hàng</option>
+                                        <option value="Yêu cầu hoàn tiền">Yêu cầu hoàn tiền</option>
+                                        <option value="Góp ý dịch vụ">Góp ý dịch vụ</option>
+                                        <option value="Hợp tác kinh doanh">Hợp tác kinh doanh</option>
+                                        <option value="Khác">Khác</option>
+                                    </select>
+                                    <span asp-validation-for="Subject" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="Message" class="form-label">Nội dung <span class="text-danger">*</span></label>
+                                    <textarea asp-for="Message" class="form-control" rows="5" placeholder="Mô tả chi tiết vấn đề hoặc câu hỏi của bạn..."></textarea>
+                                    <span asp-validation-for="Message" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-gradient btn-lg w-100">
+                                        <i class="bi bi-send me-2"></i>Gửi tin nhắn
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

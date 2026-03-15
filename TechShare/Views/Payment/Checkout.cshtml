@@ -1,0 +1,49 @@
+@model TechShare.Models.Booking
+
+@{
+    ViewData["Title"] = "Thanh toán Đặt cọc";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thanh toán VNPay Demo</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .payment-card { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); padding: 40px; width: 100%; max-width: 500px; text-align: center; }
+        .vnpay-logo { width: 150px; margin-bottom: 30px; }
+        .amount-box { border: 2px dashed #3b82f6; background: #eff6ff; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .amount { color: #1e3a8a; font-size: 2rem; font-weight: 800; }
+        .btn-pay { background-color: #0b2239; color: white; padding: 12px 0; font-weight: bold; font-size: 1.1rem; border-radius: 8px; width: 100%; border: none; transition: 0.3s; }
+        .btn-pay:hover { background-color: #1a4b82; }
+        .btn-cancel { color: #6b7280; text-decoration: none; margin-top: 20px; display: inline-block; font-weight: 500; }
+        .btn-cancel:hover { color: #374151; }
+    </style>
+</head>
+<body>
+    <div class="payment-card">
+        <h3 style="color: #0b2239; font-weight: 800; margin-bottom: 5px;">Thanh toán đơn hàng</h3>
+        <p class="text-muted mb-4">Mã đơn thuê: #@Model.Id</p>
+        
+        <div class="amount-box">
+            <div class="text-muted small fw-bold mb-1">TỔNG SỐ TIỀN CẦN THANH TOÁN</div>
+            <div class="amount">@Model.TotalAmount.ToString("N0") VNĐ</div>
+            <div class="small text-primary mt-2">Dịch vụ: Đặt cọc thuê thiết bị @Model.Product?.Name</div>
+        </div>
+
+        <form asp-action="ProcessMockPayment" method="post">
+            <input type="hidden" name="bookingId" value="@Model.Id" />
+            <button type="submit" class="btn-pay shadow-sm">
+                XÁC NHẬN THANH TOÁN
+            </button>
+        </form>
+
+        <a href="javascript:history.back()" class="btn-cancel">
+            Hủy và quay lại
+        </a>
+    </div>
+</body>
+</html>

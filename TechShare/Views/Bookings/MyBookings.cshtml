@@ -1,61 +1,127 @@
 @model IEnumerable<TechShare.Models.Booking>
 
 @{
-    ViewData["Title"] = "Lịch sử thuê đồ";
+    ViewData["Title"] = "Đơn hàng của tôi";
 }
 
-<div class="container py-5">
-    <h2 class="mb-4 text-primary"><i class="bi bi-clock-history"></i> Lịch sử đơn hàng của tôi</h2>
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <h2 class="mb-1 fw-bold"><i class="bi bi-bag-check me-2"></i> Đơn hàng của tôi</h2>
+        <p class="mb-0 opacity-75">Theo dõi trạng thái thuê thiết bị</p>
+    </div>
 
     @if (!Model.Any())
     {
-        <div class="alert alert-info">
-            Bạn chưa thuê món đồ nào cả. <a asp-controller="Home" asp-action="Index">Đi thuê ngay!</a>
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-bag-x"></i></div>
+            <h5>Chưa có đơn hàng nào</h5>
+            <p class="text-muted">Hãy khám phá và thuê thiết bị công nghệ ngay!</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-gradient mt-2">
+                <i class="bi bi-search me-1"></i> Khám phá sản phẩm
+            </a>
         </div>
     }
     else
     {
-        <div class="table-responsive shadow-sm rounded">
-            <table class="table table-hover align-middle bg-white mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th>Sản phẩm</th>
-                        <th>Ngày nhận</th>
-                        <th>Ngày trả</th>
-                        <th>Tổng tiền</th>
-                        <th>Trạng thái</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-                            <td class="fw-bold text-dark">@item.Product?.Name</td>
-                            <td>@item.StartDate.ToString("dd/MM/yyyy")</td>
-                            <td>@item.EndDate.ToString("dd/MM/yyyy")</td>
-                            <td class="text-success fw-bold">@item.TotalAmount.ToString("N0") đ</td>
-                            <td>
-                                @if(item.Status.ToString() == "Pending")
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-lg-6 reveal">
+                    <div class="card-premium h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1">@item.Product?.Name</h5>
+                                    <small class="text-muted">Đặt ngày @item.BookingDate.ToString("dd/MM/yyyy")</small>
+                                </div>
+                                @if (item.Status == TechShare.Models.BookingStatus.Pending)
                                 {
-                                    <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                                    <span class="badge-gradient-warning"><i class="bi bi-clock me-1"></i>Chờ duyệt</span>
                                 }
-                                else if(item.Status.ToString() == "Approved")
+                                else if (item.Status == TechShare.Models.BookingStatus.Approved)
                                 {
-                                    <span class="badge bg-success">Đã duyệt</span>
+                                    <span class="badge-gradient-success"><i class="bi bi-check-circle me-1"></i>Đã duyệt</span>
+                                }
+                                else if (item.Status == TechShare.Models.BookingStatus.Completed)
+                                {
+                                    <span class="badge-gradient-info"><i class="bi bi-trophy me-1"></i>Hoàn thành</span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-secondary">@item.Status</span>
+                                    <span class="badge-gradient-danger"><i class="bi bi-x-circle me-1"></i>Đã hủy</span>
                                 }
-                            </td>
-                            <td>
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Xem chi tiết</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-4">
+                                    <div class="bg-light rounded-3 p-2 text-center">
+                                        <small class="text-muted d-block">Ngày nhận</small>
+                                        <strong>@item.StartDate.ToString("dd/MM")</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-arrow-right text-muted"></i>
+                                </div>
+                                <div class="col-4">
+                                    <div class="bg-light rounded-3 p-2 text-center">
+                                        <small class="text-muted d-block">Ngày trả</small>
+                                        <strong>@item.EndDate.ToString("dd/MM")</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fs-5 fw-bold" style="color: var(--primary);">@item.TotalAmount.ToString("N0") đ</span>
+                                <div class="d-flex gap-2">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i> Chi tiết
+                                    </a>
+                                    @if (item.Status == TechShare.Models.BookingStatus.Completed || item.Status == TechShare.Models.BookingStatus.Approved)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-gradient" data-bs-toggle="modal" data-bs-target="#reviewModal-@item.ProductId">
+                                            <i class="bi bi-star me-1"></i> Đánh giá
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review Modal -->
+                @if (item.Status == TechShare.Models.BookingStatus.Completed || item.Status == TechShare.Models.BookingStatus.Approved)
+                {
+                    <div class="modal fade" id="reviewModal-@item.ProductId" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius: var(--radius-lg); overflow: hidden;">
+                                <div class="card-header-gradient text-center py-3">
+                                    <h5 class="mb-0"><i class="bi bi-star me-1"></i> Đánh giá @item.Product?.Name</h5>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <form asp-controller="Reviews" asp-action="Create" method="post">
+                                        <input type="hidden" name="ProductId" value="@item.ProductId" />
+                                        <div class="text-center mb-3">
+                                            <div class="star-rating">
+                                                @for (int i = 5; i >= 1; i--)
+                                                {
+                                                    <input type="radio" name="Rating" value="@i" id="star-@item.ProductId-@i" @(i == 5 ? "checked" : "") />
+                                                    <label for="star-@item.ProductId-@i"><i class="bi bi-star-fill"></i></label>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <textarea name="Comment" class="form-control" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-gradient w-100">
+                                            <i class="bi bi-send me-1"></i> Gửi đánh giá
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
         </div>
     }
 </div>

@@ -1,34 +1,33 @@
 @model TechShare.Models.Category
 
 @{
-    ViewData["Title"] = "Chỉnh sửa Danh mục";
+    ViewData["Title"] = "Chỉnh sửa danh mục";
 }
 
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-warning text-dark text-center py-3">
-                    <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square"></i> Chỉnh sửa Danh mục</h4>
+        <div class="col-lg-6">
+            <div class="card-premium">
+                <div class="card-header-gradient text-center" style="background: var(--gradient-warning);">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i> Chỉnh sửa danh mục</h4>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-4 form-premium">
                     <form asp-action="Edit">
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                        
                         <input type="hidden" asp-for="Id" />
-                        
-                        <div class="form-group mb-4">
-                            <label asp-for="Name" class="form-label fw-bold">Tên danh mục</label>
+                        <div class="mb-4">
+                            <label asp-for="Name" class="form-label">
+                                <i class="bi bi-tag me-1"></i> Tên danh mục
+                            </label>
                             <input asp-for="Name" class="form-control form-control-lg" />
                             <span asp-validation-for="Name" class="text-danger small"></span>
                         </div>
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
-                                <i class="bi bi-arrow-left"></i> Hủy & Quay lại
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Hủy
                             </a>
-                            <button type="submit" class="btn btn-warning px-4 fw-bold">
-                                <i class="bi bi-check2-circle"></i> Lưu thay đổi
+                            <button type="submit" class="btn btn-gradient px-4">
+                                <i class="bi bi-check2-all me-1"></i> Lưu thay đổi
                             </button>
                         </div>
                     </form>

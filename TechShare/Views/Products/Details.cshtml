@@ -1,66 +1,158 @@
 @model TechShare.Models.Product
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Name;
+    var averageRating = Model.Reviews != null && Model.Reviews.Any() ? Model.Reviews.Average(r => r.Rating) : 0;
+    var reviewCount = Model.Reviews?.Count ?? 0;
 }
 
-<h1>Details</h1>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card-premium">
+                <div class="row g-0">
+                    <div class="col-md-5">
+                        <img src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "https://via.placeholder.com/500x400?text=No+Image" : Model.ImageUrl)"
+                             class="w-100 h-100" style="object-fit: cover; min-height: 320px;" alt="@Model.Name" />
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <span class="badge-gradient-info mb-2 d-inline-block">@Model.Category?.Name</span>
+                                    <h2 class="fw-bold mb-1">@Model.Name</h2>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-person me-1"></i>@(Model.Owner?.FullName ?? "Admin")
+                                    </div>
+                                </div>
+                                <span class="price-badge fs-5">@Model.PricePerDay.ToString("N0") đ/ngày</span>
+                            </div>
 
-<div>
-    <h4>Product</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.PricePerDay)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PricePerDay)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ImageUrl)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ImageUrl)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Location)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Location)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IsAvailable)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IsAvailable)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Category)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Category.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Owner)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Owner.Id)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+                            <p class="text-muted mb-4" style="line-height: 1.8;">@Model.Description</p>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-sm-6">
+                                    <div class="bg-light rounded-3 p-3 h-100">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>Vị trí</small>
+                                            @if (Model.DistanceKm.HasValue)
+                                            {
+                                                <small class="badge bg-white text-dark border shadow-sm"><i class="bi bi-cursor-fill text-primary"></i> Cách @Model.DistanceKm.Value km</small>
+                                            }
+                                        </div>
+                                        <p class="fw-bold mb-0">@Model.Location</p>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="bg-light rounded-3 p-3 h-100">
+                                        <small class="text-muted"><i class="bi bi-check-circle me-1"></i>Trạng thái</small>
+                                        <p class="fw-bold mb-0">
+                                            <span class="availability-dot @(Model.IsAvailable ? "available" : "unavailable")"></span>
+                                            @(Model.IsAvailable ? "Sẵn sàng cho thuê" : "Đang bận")
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="bg-light rounded-3 p-3 h-100">
+                                        <small class="text-muted"><i class="bi bi-star me-1"></i>Đánh giá trung bình</small>
+                                        <p class="fw-bold mb-0">
+                                            @if (reviewCount > 0)
+                                            {
+                                                <span class="stars">
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <i class="bi @(i <= Math.Round(averageRating) ? "bi-star-fill" : "bi-star")"></i>
+                                                    }
+                                                </span>
+                                                <span class="text-muted ms-1">@averageRating.ToString("0.0") / 5 (@reviewCount)</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Chưa có đánh giá</span>
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="bg-light rounded-3 p-3 h-100">
+                                        <small class="text-muted"><i class="bi bi-box-seam me-1"></i>Điều hướng</small>
+                                        <p class="fw-bold mb-0">Xem thêm trong catalog hoặc đặt thuê ngay.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <a asp-action="Index" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i> Về catalog
+                                </a>
+                                @if (Model.IsAvailable)
+                                {
+                                    <a asp-controller="Bookings" asp-action="Create" asp-route-productId="@Model.Id" class="btn btn-gradient-success">
+                                        <i class="bi bi-bag-plus me-1"></i> Thuê ngay
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline-secondary" disabled>
+                                        <i class="bi bi-clock me-1"></i> Đang cho thuê
+                                    </button>
+                                }
+                                
+                                @if (Model.OwnerId != null && User.Identity != null && User.Identity.IsAuthenticated && Model.OwnerId != User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+                                {
+                                    <a asp-controller="Chat" asp-action="Index" asp-route-userId="@Model.OwnerId" class="btn btn-outline-primary shadow-sm" style="border-radius: 8px;">
+                                        <i class="bi bi-chat-dots me-1"></i> Chat với chủ máy
+                                    </a>
+                                }
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <a asp-action="Manage" class="btn btn-outline-dark">
+                                        <i class="bi bi-shield-lock me-1"></i> Về quản trị
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-gradient">
+                                        <i class="bi bi-pencil me-1"></i> Chỉnh sửa
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-premium mt-4">
+                <div class="card-header-gradient">
+                    <i class="bi bi-chat-square-text me-2"></i> Đánh giá từ người thuê
+                </div>
+                <div class="card-body p-4">
+                    @if (reviewCount == 0)
+                    {
+                        <p class="text-muted mb-0">Sản phẩm này chưa có đánh giá nào.</p>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @foreach (var review in Model.Reviews!.OrderByDescending(r => r.CreatedAt))
+                            {
+                                <div class="col-12">
+                                    <div class="bg-light rounded-3 p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <strong>@(review.Reviewer?.FullName ?? review.Reviewer?.Email ?? "Người dùng")</strong>
+                                            <div class="text-muted small">@review.CreatedAt.ToString("dd/MM/yyyy")</div>
+                                        </div>
+                                        <div class="stars mb-2">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="bi @(i <= review.Rating ? "bi-star-fill" : "bi-star")"></i>
+                                            }
+                                        </div>
+                                        <div class="text-muted">@(string.IsNullOrWhiteSpace(review.Comment) ? "Không có nhận xét thêm." : review.Comment)</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

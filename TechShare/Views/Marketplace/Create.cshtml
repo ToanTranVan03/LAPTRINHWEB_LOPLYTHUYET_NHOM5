@@ -1,0 +1,102 @@
+@model TechShare.Models.MarketplaceListing
+
+@{
+    ViewData["Title"] = "Đăng bán thiết bị";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="page-header mb-4">
+                <h1 class="mb-1"><i class="bi bi-plus-circle me-2"></i>Đăng bán thiết bị</h1>
+                <p class="mb-0 opacity-75">Thanh lý thiết bị công nghệ không còn sử dụng với giá tốt</p>
+            </div>
+
+            <div class="card-premium p-4">
+                <form asp-action="Create" method="post" class="form-premium">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label asp-for="Title" class="form-label">
+                                <i class="bi bi-tag me-1" style="color: var(--primary);"></i> Tên sản phẩm <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Title" class="form-control" placeholder="VD: iPhone 15 Pro Max 256GB" />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="CategoryId" class="form-label">
+                                <i class="bi bi-collection me-1" style="color: var(--primary);"></i> Danh mục <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="CategoryId" asp-items="@(ViewBag.Categories as SelectList)" class="form-select">
+                                <option value="">-- Chọn --</option>
+                            </select>
+                            <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Price" class="form-label">
+                                <i class="bi bi-currency-exchange me-1" style="color: var(--primary);"></i> Giá bán (đ) <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Price" class="form-control" type="number" min="10000" step="1000" placeholder="5000000" />
+                            <span asp-validation-for="Price" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="OriginalPrice" class="form-label">
+                                <i class="bi bi-tag me-1" style="color: var(--primary);"></i> Giá gốc (đ)
+                            </label>
+                            <input asp-for="OriginalPrice" class="form-control" type="number" min="0" step="1000" placeholder="15000000" />
+                            <small class="text-muted">Để trống nếu không muốn hiện</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Condition" class="form-label">
+                                <i class="bi bi-check-circle me-1" style="color: var(--primary);"></i> Tình trạng <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="Condition" class="form-select">
+                                <option value="LikeNew">Như mới (95-99%)</option>
+                                <option value="Good">Tốt (80-95%)</option>
+                                <option value="Fair">Khá (60-80%)</option>
+                                <option value="Poor">Cũ (dưới 60%)</option>
+                            </select>
+                            <span asp-validation-for="Condition" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Location" class="form-label">
+                                <i class="bi bi-geo-alt me-1" style="color: var(--primary);"></i> Địa chỉ <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Location" class="form-control" placeholder="VD: Hà Nội - Cầu Giấy" />
+                            <span asp-validation-for="Location" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ImageUrl" class="form-label">
+                                <i class="bi bi-image me-1" style="color: var(--primary);"></i> Link ảnh sản phẩm
+                            </label>
+                            <input asp-for="ImageUrl" class="form-control" placeholder="https://..." />
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Description" class="form-label">
+                                <i class="bi bi-text-paragraph me-1" style="color: var(--primary);"></i> Mô tả chi tiết <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="5"
+                                      placeholder="Mô tả tình trạng máy, phụ kiện đi kèm, lý do bán, thời gian sử dụng..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-gradient btn-lg w-100">
+                                <i class="bi bi-megaphone me-1"></i> Đăng bán
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

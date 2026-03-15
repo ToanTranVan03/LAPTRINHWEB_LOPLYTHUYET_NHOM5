@@ -1,11 +1,11 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering; 
 using Microsoft.EntityFrameworkCore;
 using TechShare.Data;
 using TechShare.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization; // <--- Đừng quên thư viện này
+using TechShare.ViewModels;
 
 namespace TechShare.Controllers;
 
@@ -16,10 +16,11 @@ public class HomeController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
 
-    public HomeController(ILogger<HomeController> logger, 
-                          ApplicationDbContext context,
-                          UserManager<ApplicationUser> userManager,
-                          RoleManager<IdentityRole> roleManager)
+    public HomeController(
+        ILogger<HomeController> logger,
+        ApplicationDbContext context,
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager)
     {
         _logger = logger;
         _context = context;
@@ -27,29 +28,38 @@ public class HomeController : Controller
         _roleManager = roleManager;
     }
 
-    // 1. TRANG CHỦ (CÓ TÌM KIẾM & LỌC)
-    public async Task<IActionResult> Index(string searchString, int? categoryId)
+    public async Task<IActionResult> Index()
     {
-        var products = from p in _context.Products.Include(p => p.Category)
-                       select p;
-
-        if (!string.IsNullOrEmpty(searchString))
+        var viewModel = new HomeLandingViewModel
         {
-            products = products.Where(s => s.Name.Contains(searchString));
-        }
+            HighlightCategories = await _context.Categories
+                .Select(c => new CategoryHighlightViewModel
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    ProductCount = c.Products!.Count()
+                })
+                .OrderByDescending(c => c.ProductCount)
+                .ThenBy(c => c.Name)
+                .Take(8)
+                .ToListAsync(),
+            TotalProducts = await _context.Products.CountAsync(),
+            TotalCategories = await _context.Categories.CountAsync(),
+            TotalReviews = await _context.Reviews.CountAsync(),
+            TotalUsers = await _userManager.Users.CountAsync(),
+            TotalBookings = await _context.Bookings.CountAsync(),
+            LatestProducts = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Reviews)
+                .Where(p => p.IsAvailable)
+                .OrderByDescending(p => p.Id)
+                .Take(3)
+                .ToListAsync()
+        };
 
-        if (categoryId.HasValue)
-        {
-            products = products.Where(x => x.CategoryId == categoryId);
-        }
-
-        ViewData["Categories"] = new SelectList(_context.Categories, "Id", "Name");
-        ViewData["CurrentFilter"] = searchString;
-
-        return View(await products.ToListAsync());
+        return View(viewModel);
     }
 
-    // 2. CẤP QUYỀN ADMIN (CHẠY 1 LẦN)
     public async Task<IActionResult> SetupAdmin()
     {
         if (!await _roleManager.RoleExistsAsync("Admin"))
@@ -61,40 +71,68 @@ public class HomeController : Controller
         if (user != null)
         {
             await _userManager.AddToRoleAsync(user, "Admin");
-            return Content($"✅ Đã cấp quyền Admin cho: {user.UserName}");
+            return Content($"Da cap quyen Admin cho: {user.UserName}");
         }
-        return Content("❌ Bạn chưa đăng nhập!");
+
+        return Content("Ban chua dang nhap!");
     }
 
-
-// ==========================================================
-    // --- 1. HÀM DASHBOARD (CẬP NHẬT: LẤY THÊM DANH SÁCH USER) ---
-    // ==========================================================
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Dashboard()
+    // Trang FAQ
+    [AllowAnonymous]
+    public IActionResult FAQ()
     {
-        ViewBag.TotalRevenue = await _context.Bookings.Where(b => b.Status == BookingStatus.Approved).SumAsync(b => b.TotalAmount);
-        ViewBag.TotalOrders = await _context.Bookings.CountAsync();
-        ViewBag.TotalProducts = await _context.Products.CountAsync();
-        ViewBag.TotalUsers = await _userManager.Users.CountAsync();
-
-        // LẬP DANH SÁCH USER VÀ KIỂM TRA QUYỀN
-        var userRoles = new Dictionary<string, bool>();
-        var allUsers = await _userManager.Users.ToListAsync();
-        foreach (var u in allUsers)
-        {
-            // Kiểm tra xem user này có phải Admin không (True/False)
-            userRoles[u.Email] = await _userManager.IsInRoleAsync(u, "Admin");
-        }
-        // Gửi danh sách này sang View
-        ViewBag.UserRoles = userRoles;
-
         return View();
     }
 
-    // ==========================================================
-    // --- 2. HÀM THĂNG CHỨC (CẬP NHẬT: THÔNG BÁO MƯỢT HƠN) ---
-    // ==========================================================
+    // Trang Về chúng tôi
+    [AllowAnonymous]
+    public IActionResult About()
+    {
+        return View();
+    }
+
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Dashboard()
+    {
+        ViewBag.TotalRevenue = await _context.Bookings
+            .Where(b => b.Status == BookingStatus.Approved || b.Status == BookingStatus.Completed)
+            .SumAsync(b => b.TotalAmount);
+        ViewBag.TotalOrders = await _context.Bookings.CountAsync();
+        ViewBag.TotalProducts = await _context.Products.CountAsync();
+        ViewBag.TotalUsers = await _userManager.Users.CountAsync();
+        ViewBag.PendingOrders = await _context.Bookings.CountAsync(b => b.Status == BookingStatus.Pending);
+        ViewBag.TotalContacts = await _context.ContactMessages.CountAsync(c => c.Status == ContactStatus.New);
+
+        var monthlyRevenue = new List<object>();
+        for (var i = 5; i >= 0; i--)
+        {
+            var month = DateTime.Now.AddMonths(-i);
+            var revenue = await _context.Bookings
+                .Where(b => b.BookingDate.Month == month.Month && b.BookingDate.Year == month.Year)
+                .Where(b => b.Status == BookingStatus.Approved || b.Status == BookingStatus.Completed)
+                .SumAsync(b => (decimal?)b.TotalAmount) ?? 0;
+            monthlyRevenue.Add(new { Label = month.ToString("MM/yyyy"), Value = revenue });
+        }
+
+        ViewBag.MonthlyRevenue = monthlyRevenue;
+        ViewBag.RecentOrders = await _context.Bookings
+            .Include(b => b.Product)
+            .Include(b => b.Renter)
+            .OrderByDescending(b => b.BookingDate)
+            .Take(5)
+            .ToListAsync();
+
+        var userRoles = new Dictionary<string, bool>();
+        var allUsers = await _userManager.Users.ToListAsync();
+        foreach (var user in allUsers)
+        {
+            userRoles[user.Email ?? user.UserName ?? "N/A"] = await _userManager.IsInRoleAsync(user, "Admin");
+        }
+
+        ViewBag.UserRoles = userRoles;
+        return View();
+    }
+
     [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> PromoteAdmin(string email)
@@ -103,42 +141,40 @@ public class HomeController : Controller
         if (user != null && !await _userManager.IsInRoleAsync(user, "Admin"))
         {
             await _userManager.AddToRoleAsync(user, "Admin");
-            TempData["Message"] = $"✅ Đã thăng chức {email} thành Quản trị viên!";
+            TempData["Message"] = $"Da thang chuc {email} thanh Quan tri vien!";
         }
-        return RedirectToAction(nameof(Dashboard)); // Load lại trang Dashboard
+
+        return RedirectToAction(nameof(Dashboard));
     }
 
-// ==========================================================
-    // --- 3. HÀM GIÁNG CẤP (ĐÃ THÊM BẢO VỆ SUPER ADMIN) ---
-    // ==========================================================
     [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> DemoteAdmin(string email)
     {
-        // 1. TƯỜNG LỬA: Bảo vệ Super Admin (Tài khoản gốc của bạn)
-        string superAdminEmail = "ttoan17123@gmail.com"; // <-- Sửa email của bạn ở đây nếu cần
+        const string superAdminEmail = "ttoan17123@gmail.com";
 
-        if (email.ToLower() == superAdminEmail.ToLower())
+        if (email.Equals(superAdminEmail, StringComparison.OrdinalIgnoreCase))
         {
-            TempData["Message"] = "❌ Lỗi bảo mật: Không ai có quyền giáng cấp Quản trị viên tối cao!";
+            TempData["Message"] = "Loi bao mat: khong the giang cap Quan tri vien toi cao!";
             return RedirectToAction(nameof(Dashboard));
         }
 
         var user = await _userManager.FindByEmailAsync(email);
         if (user != null && await _userManager.IsInRoleAsync(user, "Admin"))
         {
-            // 2. Không cho phép tự giáng cấp chính mình
-            if (user.UserName == User.Identity.Name) 
+            if (user.UserName == User.Identity?.Name)
             {
-                TempData["Message"] = "❌ Lỗi: Bạn không thể tự giáng cấp chính mình!";
+                TempData["Message"] = "Loi: ban khong the tu giang cap chinh minh!";
                 return RedirectToAction(nameof(Dashboard));
             }
 
             await _userManager.RemoveFromRoleAsync(user, "Admin");
-            TempData["Message"] = $"⬇️ Đã giáng cấp {email} về Khách hàng thường.";
+            TempData["Message"] = $"Da giang cap {email} ve tai khoan thuong.";
         }
+
         return RedirectToAction(nameof(Dashboard));
     }
+
     public IActionResult Privacy()
     {
         return View();

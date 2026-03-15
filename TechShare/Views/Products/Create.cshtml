@@ -1,70 +1,105 @@
 @model TechShare.Models.Product
 
 @{
-    ViewData["Title"] = "Thêm Sản phẩm mới";
+    ViewData["Title"] = "Đăng sản phẩm cho thuê";
 }
 
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-primary text-white text-center py-3">
-                    <h4 class="mb-0"><i class="bi bi-box-seam"></i> Đăng Sản phẩm cho thuê</h4>
+        <div class="col-lg-9">
+            <div class="card-premium">
+                <div class="card-header-gradient text-center">
+                    <h4 class="mb-0"><i class="bi bi-cloud-arrow-up me-2"></i> Đăng sản phẩm cho thuê</h4>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-4 form-premium">
                     <form asp-action="Create" enctype="multipart/form-data">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Name" class="form-label fw-bold">Tên thiết bị</label>
-                                <input asp-for="Name" class="form-control" placeholder="VD: Macbook Pro 16 inch..." />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:none;"></div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <label asp-for="Name" class="form-label">
+                                    <i class="bi bi-laptop me-1"></i> Tên thiết bị
+                                </label>
+                                <input asp-for="Name" class="form-control" placeholder="VD: MacBook Pro 16&quot; M3 Max..." />
                                 <span asp-validation-for="Name" class="text-danger small"></span>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="CategoryId" class="form-label fw-bold">Danh mục</label>
-                                <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.CategoryId"></select>
+                            <div class="col-md-5">
+                                <label asp-for="CategoryId" class="form-label">
+                                    <i class="bi bi-tag me-1"></i> Danh mục
+                                </label>
+                                <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.CategoryId">
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Description" class="form-label fw-bold">Mô tả chi tiết</label>
-                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Tình trạng máy, phụ kiện đi kèm..."></textarea>
+                            <label asp-for="Description" class="form-label">
+                                <i class="bi bi-card-text me-1"></i> Mô tả chi tiết
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Tình trạng máy, cấu hình, phụ kiện đi kèm..."></textarea>
                             <span asp-validation-for="Description" class="text-danger small"></span>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="PricePerDay" class="form-label fw-bold">Giá thuê (VNĐ / ngày)</label>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="PricePerDay" class="form-label">
+                                    <i class="bi bi-cash me-1"></i> Giá thuê / ngày
+                                </label>
                                 <div class="input-group">
-                                    <input asp-for="PricePerDay" class="form-control" type="number" />
-                                    <span class="input-group-text">VNĐ</span>
+                                    <input asp-for="PricePerDay" class="form-control" type="number" min="0" placeholder="100000" />
+                                    <span class="input-group-text fw-bold">đ</span>
                                 </div>
                                 <span asp-validation-for="PricePerDay" class="text-danger small"></span>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Location" class="form-label fw-bold">Khu vực / Phòng</label>
-                                <input asp-for="Location" class="form-control" placeholder="VD: Tòa A, Phòng 101..." />
+                            <div class="col-md-6">
+                                <label asp-for="Location" class="form-label">
+                                    <i class="bi bi-geo-alt me-1"></i> Vị trí / Khu vực
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="Location" id="locationInput" class="form-control" placeholder="VD: Hà Nội - Cầu Giấy" />
+                                    <button type="button" class="btn btn-outline-secondary" id="btnGetLocation" title="Lấy tọa độ hiện tại">
+                                        <i class="bi bi-crosshair"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" asp-for="Latitude" id="latInput" />
+                                <input type="hidden" asp-for="Longitude" id="lngInput" />
                                 <span asp-validation-for="Location" class="text-danger small"></span>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-primary"><i class="bi bi-image"></i> Chọn ảnh sản phẩm</label>
-                            <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-image me-1"></i> Ảnh sản phẩm
+                            </label>
+                            <input type="file" name="imageFile" id="imageFile" class="form-control" accept="image/*" />
+                            <small class="text-muted">Tải ảnh từ máy tính của bạn.</small>
+                            <div class="mt-2 text-center" id="imagePreviewWrapper" style="display:none;">
+                                <img id="imagePreview" src="#" class="rounded-3 img-thumbnail" style="max-height: 200px; object-fit:cover;" />
+                            </div>
                         </div>
 
-                        <div class="form-check form-switch mb-4">
-                            <input asp-for="IsAvailable" class="form-check-input" type="checkbox" role="switch" checked>
-                            <label class="form-check-label fw-bold" asp-for="IsAvailable">Sẵn sàng cho thuê ngay</label>
+                        <div class="bg-light rounded-3 p-3 mb-4 d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="mb-0 fw-bold">Trạng thái sẵn sàng cho thuê</h6>
+                                <small class="text-muted">Bật để hiển thị sản phẩm ngay trên catalog công khai.</small>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input asp-for="IsAvailable" class="form-check-input" type="checkbox" role="switch" style="width:3rem;height:1.5rem;" checked />
+                            </div>
                         </div>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
-                                <i class="bi bi-arrow-left"></i> Quay lại
-                            </a>
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="bi bi-cloud-arrow-up"></i> Đăng sản phẩm
+                        <div class="d-flex gap-2 justify-content-end">
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Manage" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Về quản trị</a>
+                            }
+                            else
+                            {
+                                <a asp-action="MyProducts" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Hủy</a>
+                            }
+                            <button type="submit" class="btn btn-gradient px-4">
+                                <i class="bi bi-cloud-arrow-up me-1"></i> Đăng sản phẩm
                             </button>
                         </div>
                     </form>
@@ -76,4 +111,49 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.getElementById('imageFile')?.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('imagePreview').src = ev.target.result;
+                    document.getElementById('imagePreviewWrapper').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Xử lý nút Lấy vị trí
+        document.getElementById('btnGetLocation').addEventListener('click', function() {
+            var btn = this;
+            if ("geolocation" in navigator) {
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('latInput').value = position.coords.latitude;
+                    document.getElementById('lngInput').value = position.coords.longitude;
+                    
+                    // Fetch geocoding API to get address (đây là mock giả lập tên dựa trên API Nominatim public)
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data && data.display_name) {
+                                document.getElementById('locationInput').value = data.address.city || data.address.state || 'Vị trí hiện tại của tôi';
+                            }
+                            btn.innerHTML = '<i class="bi bi-crosshair"></i>';
+                        })
+                        .catch(err => {
+                            document.getElementById('locationInput').value = `Đã lấy tọa độ (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`;
+                            btn.innerHTML = '<i class="bi bi-crosshair"></i>';
+                        });
+
+                }, function(error) {
+                    alert("Không thể lấy vị trí. Vui lòng cấp quyền trong trình duyệt.");
+                    btn.innerHTML = '<i class="bi bi-crosshair"></i>';
+                });
+            } else {
+                alert("Trình duyệt không hỗ trợ Geolocation.");
+            }
+        });
+    </script>
 }

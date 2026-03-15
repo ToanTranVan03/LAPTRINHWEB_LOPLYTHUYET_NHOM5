@@ -4,74 +4,103 @@
     ViewData["Title"] = "Quản lý Đặt lịch";
 }
 
-<div class="container-fluid">
-    <h1 class="text-danger mb-4"><i class="bi bi-gear-wide-connected"></i> Quản lý Đặt lịch (Admin)</h1>
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1 fw-bold"><i class="bi bi-calendar-check me-2"></i> Quản lý Đặt lịch</h2>
+                <p class="mb-0 opacity-75">Duyệt, hoàn thành hoặc hủy đơn hàng</p>
+            </div>
+            <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                <i class="bi bi-list-check me-1"></i> @Model.Count() đơn
+            </span>
+        </div>
+    </div>
 
-    <div class="card shadow border-0">
-        <div class="card-body">
-            <table class="table table-hover align-middle">
-                <thead class="bg-light">
-                    <tr>
-                        <th>Khách hàng</th>
-                        <th>Sản phẩm</th>
-                        <th>Ngày thuê</th>
-                        <th>Tổng tiền</th>
-                        <th>Trạng thái</th>
-                        <th class="text-center">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
+    <div class="card-premium">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-premium mb-0">
+                    <thead>
                         <tr>
-                            <td>
-                                <strong>@(item.Renter?.UserName ?? item.RenterId)</strong><br/>
-                                <small class="text-muted">Ngày đặt: @item.BookingDate.ToString("dd/MM/yyyy")</small>
-                            </td>
-                            <td class="text-primary fw-bold">@item.Product?.Name</td>
-                            <td>
-                                @item.StartDate.ToString("dd/MM") <i class="bi bi-arrow-right"></i> @item.EndDate.ToString("dd/MM")
-                            </td>
-                            <td class="text-success fw-bold">
-                                @item.TotalAmount.ToString("N0") đ
-                            </td>
-                            <td>
-                                @if (item.Status == TechShare.Models.BookingStatus.Pending)
-                                {
-                                    <span class="badge bg-warning text-dark">Chờ duyệt</span>
-                                }
-                                else if (item.Status == TechShare.Models.BookingStatus.Approved)
-                                {
-                                    <span class="badge bg-success">Đã duyệt</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">Đã hủy</span>
-                                }
-                            </td>
-                            <td class="text-center">
-                                @if (item.Status == TechShare.Models.BookingStatus.Pending)
-                                {
-                                    <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-success btn-sm me-1" title="Duyệt đơn">
-                                        <i class="bi bi-check-lg"></i> Duyệt
-                                    </a>
-                                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-danger btn-sm" title="Từ chối" onclick="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
-                                        <i class="bi bi-x-lg"></i> Hủy
-                                    </a>
-                                }
-                                else
-                                {
-                                    <span class="text-muted small">Đã xử lý</span>
-                                }
-                                
-                                <div class="mt-2">
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="text-decoration-none small text-danger">Xóa</a>
-                                </div>
-                            </td>
+                            <th class="ps-4">Khách hàng</th>
+                            <th>Sản phẩm</th>
+                            <th>Thời gian thuê</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center pe-4">Hành động</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <span class="user-avatar" style="width:32px;height:32px;font-size:0.75rem;">
+                                            @(item.Renter?.UserName?.Substring(0, 1).ToUpper() ?? "?")
+                                        </span>
+                                        <div>
+                                            <strong class="d-block">@(item.Renter?.UserName ?? "N/A")</strong>
+                                            <small class="text-muted">@item.BookingDate.ToString("dd/MM/yyyy")</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="fw-bold" style="color: var(--primary);">@item.Product?.Name</td>
+                                <td>
+                                    @item.StartDate.ToString("dd/MM") <i class="bi bi-arrow-right text-muted mx-1"></i> @item.EndDate.ToString("dd/MM")
+                                </td>
+                                <td class="fw-bold text-success">@item.TotalAmount.ToString("N0") đ</td>
+                                <td>
+                                    @if (item.Status == TechShare.Models.BookingStatus.Pending)
+                                    {
+                                        <span class="badge-gradient-warning">Chờ duyệt</span>
+                                    }
+                                    else if (item.Status == TechShare.Models.BookingStatus.Approved)
+                                    {
+                                        <span class="badge-gradient-success">Đã duyệt</span>
+                                    }
+                                    else if (item.Status == TechShare.Models.BookingStatus.Completed)
+                                    {
+                                        <span class="badge-gradient-info">Hoàn thành</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-gradient-danger">Đã hủy</span>
+                                    }
+                                </td>
+                                <td class="text-center pe-4">
+                                    @if (item.Status == TechShare.Models.BookingStatus.Pending)
+                                    {
+                                        <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-gradient-success me-1">
+                                            <i class="bi bi-check-lg"></i> Duyệt
+                                        </a>
+                                        <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-gradient-danger"
+                                           onclick="return confirm('Hủy đơn này?');">
+                                            <i class="bi bi-x-lg"></i> Hủy
+                                        </a>
+                                    }
+                                    else if (item.Status == TechShare.Models.BookingStatus.Approved)
+                                    {
+                                        <a asp-action="Complete" asp-route-id="@item.Id" class="btn btn-sm btn-gradient">
+                                            <i class="bi bi-trophy me-1"></i> Hoàn thành
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Đã xử lý</span>
+                                    }
+                                    <div class="mt-1">
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="text-danger small text-decoration-none">
+                                            <i class="bi bi-trash3"></i> Xóa
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

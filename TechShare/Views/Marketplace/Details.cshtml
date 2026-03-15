@@ -1,0 +1,144 @@
+@model TechShare.Models.MarketplaceListing
+
+@{
+    ViewData["Title"] = Model.Title;
+    var conditionText = Model.Condition switch
+    {
+        TechShare.Models.ProductCondition.LikeNew => "Như mới",
+        TechShare.Models.ProductCondition.Good => "Tốt",
+        TechShare.Models.ProductCondition.Fair => "Khá",
+        TechShare.Models.ProductCondition.Poor => "Cũ",
+        _ => "N/A"
+    };
+    var discount = Model.OriginalPrice.HasValue && Model.OriginalPrice > 0
+        ? (int)((1 - Model.Price / Model.OriginalPrice.Value) * 100)
+        : 0;
+    var similar = ViewBag.SimilarListings as List<TechShare.Models.MarketplaceListing>;
+}
+
+<div class="container py-4">
+    <a asp-action="Index" class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại chợ
+    </a>
+
+    <div class="row g-4">
+        <!-- Image -->
+        <div class="col-lg-6">
+            <div class="card-premium overflow-hidden">
+                <img src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "https://via.placeholder.com/600x400?text=No+Image" : Model.ImageUrl)"
+                     class="w-100" style="max-height: 450px; object-fit: cover;" alt="@Model.Title">
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="col-lg-6">
+            <div class="card-premium p-4">
+                <div class="d-flex gap-2 mb-2">
+                    <span class="badge-gradient-info">@Model.Category?.Name</span>
+                    @{
+                        var condBadge = Model.Condition switch
+                        {
+                            TechShare.Models.ProductCondition.LikeNew => "badge-gradient-success",
+                            TechShare.Models.ProductCondition.Good => "badge-gradient-info",
+                            TechShare.Models.ProductCondition.Fair => "badge-gradient-warning",
+                            _ => "badge-gradient-danger"
+                        };
+                    }
+                    <span class="@condBadge">@conditionText</span>
+                    @if (Model.Status == TechShare.Models.ListingStatus.Sold)
+                    {
+                        <span class="badge-gradient-danger">ĐÃ BÁN</span>
+                    }
+                </div>
+
+                <h2 class="fw-bold mb-2">@Model.Title</h2>
+
+                <div class="mb-3">
+                    <span class="fw-bold" style="font-size: 2rem; color: var(--primary);">@Model.Price.ToString("N0")đ</span>
+                    @if (Model.OriginalPrice.HasValue)
+                    {
+                        <span class="text-muted text-decoration-line-through ms-2">@Model.OriginalPrice.Value.ToString("N0")đ</span>
+                        <span class="badge-gradient-danger ms-1">Giảm @(discount)%</span>
+                    }
+                </div>
+
+                <hr />
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="small text-muted fw-semibold">Người bán</div>
+                        <div><i class="bi bi-person me-1" style="color: var(--primary);"></i> @Model.Seller?.FullName</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted fw-semibold">Địa chỉ</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span><i class="bi bi-geo-alt me-1" style="color: var(--primary);"></i> @Model.Location</span>
+                            @if (Model.DistanceKm.HasValue)
+                            {
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-cursor-fill text-primary"></i> @Model.DistanceKm.Value km
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted fw-semibold">Ngày đăng</div>
+                        <div><i class="bi bi-calendar me-1" style="color: var(--primary);"></i> @Model.CreatedAt.ToString("dd/MM/yyyy")</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted fw-semibold">Tình trạng</div>
+                        <div><i class="bi bi-check-circle me-1" style="color: var(--primary);"></i> @conditionText</div>
+                    </div>
+                </div>
+
+                <hr />
+
+                <h6 class="fw-bold mb-2">Mô tả</h6>
+                <p class="text-muted" style="line-height: 1.8;">@Model.Description</p>
+
+                @if (Model.Status == TechShare.Models.ListingStatus.Active && User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="mailto:@Model.Seller?.Email?subject=TechShare: @Model.Title" class="btn btn-gradient flex-fill">
+                            <i class="bi bi-envelope me-1"></i> Liên hệ người bán
+                        </a>
+                        <a asp-controller="Contact" asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-headset me-1"></i> Hỗ trợ
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Similar Listings -->
+    @if (similar != null && similar.Any())
+    {
+        <div class="mt-5">
+            <h4 class="fw-bold mb-3"><i class="bi bi-grid me-2" style="color: var(--primary);"></i>Tin rao tương tự</h4>
+            <div class="row g-4">
+                @foreach (var s in similar)
+                {
+                    <div class="col-lg-4 col-md-6 reveal">
+                        <div class="product-card card">
+                            <div class="card-img-wrapper">
+                                <img src="@(string.IsNullOrEmpty(s.ImageUrl) ? "https://via.placeholder.com/400x250?text=No+Image" : s.ImageUrl)"
+                                     class="card-img-top" alt="@s.Title">
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">@s.Title</h5>
+                                <span class="fw-bold" style="color: var(--primary);">@s.Price.ToString("N0")đ</span>
+                                <span class="badge-gradient-info ms-2">@s.Category?.Name</span>
+                            </div>
+                            <div class="card-footer bg-white border-0 p-3 pt-0">
+                                <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-eye me-1"></i> Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

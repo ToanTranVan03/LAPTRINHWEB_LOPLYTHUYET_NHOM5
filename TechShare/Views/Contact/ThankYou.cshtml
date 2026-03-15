@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "Cảm ơn bạn";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="card-premium p-5">
+                <div class="mb-4" style="font-size: 5rem; color: var(--primary);">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <h2 class="fw-bold mb-3">Cảm ơn bạn!</h2>
+                <p class="text-muted mb-4">
+                    Tin nhắn của bạn đã được gửi thành công. Đội ngũ hỗ trợ TechShare sẽ phản hồi
+                    trong vòng 24 giờ qua email bạn đã cung cấp.
+                </p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-gradient px-4">
+                        <i class="bi bi-house me-1"></i> Về trang chủ
+                    </a>
+                    <a asp-controller="Products" asp-action="Index" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-grid me-1"></i> Xem sản phẩm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

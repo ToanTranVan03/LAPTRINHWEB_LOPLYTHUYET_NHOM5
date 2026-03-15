@@ -1,0 +1,172 @@
+@model IEnumerable<TechShare.Models.MarketplaceListing>
+
+@{
+    ViewData["Title"] = "Chợ thanh lý thiết bị";
+    var categories = ViewBag.Categories as List<TechShare.Models.Category>;
+}
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h1 class="mb-1"><i class="bi bi-shop-window me-2"></i>Chợ thanh lý thiết bị</h1>
+                <p class="mb-0 opacity-75">Mua bán thiết bị công nghệ đã qua sử dụng với giá tốt nhất</p>
+            </div>
+            <div>
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <a asp-action="Create" class="btn btn-light btn-lg fw-bold">
+                        <i class="bi bi-plus-circle me-1"></i> Đăng bán
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card-premium p-3 mb-4">
+        <form asp-action="Index" method="get" class="form-premium">
+            <div class="row g-2 align-items-end">
+                <div class="col-lg-4 col-md-6">
+                    <input type="text" name="search" class="form-control" placeholder="🔍 Tìm kiếm sản phẩm..." value="@ViewBag.Search" />
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <select name="categoryId" class="form-select">
+                        <option value="">Tất cả danh mục</option>
+                        @if (categories != null)
+                        {
+                            @foreach (var cat in categories)
+                            {
+                                <option value="@cat.Id" selected="@(ViewBag.CategoryId != null && ViewBag.CategoryId == cat.Id)">@cat.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <select name="condition" class="form-select">
+                        <option value="">Tất cả tình trạng</option>
+                        <option value="LikeNew" selected="@(ViewBag.Condition == "LikeNew")">Như mới</option>
+                        <option value="Good" selected="@(ViewBag.Condition == "Good")">Tốt</option>
+                        <option value="Fair" selected="@(ViewBag.Condition == "Fair")">Khá</option>
+                        <option value="Poor" selected="@(ViewBag.Condition == "Poor")">Cũ</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <select name="sort" class="form-select">
+                        <option value="">Mới nhất</option>
+                        <option value="price_asc" selected="@(ViewBag.Sort == "price_asc")">Giá thấp → cao</option>
+                        <option value="price_desc" selected="@(ViewBag.Sort == "price_desc")">Giá cao → thấp</option>
+                        <option value="oldest" selected="@(ViewBag.Sort == "oldest")">Cũ nhất</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <button type="submit" class="btn btn-gradient w-100">
+                        <i class="bi bi-funnel me-1"></i> Lọc
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Count -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted mb-0"><strong>@ViewBag.TotalListings</strong> tin rao bán</p>
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            <a asp-action="MyListings" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-list-ul me-1"></i> Tin rao của tôi
+            </a>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-shop"></i></div>
+            <h5>Chưa có tin rao bán nào</h5>
+            <p class="text-muted">Hãy là người đầu tiên đăng bán thiết bị trên TechShare!</p>
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <a asp-action="Create" class="btn btn-gradient">
+                    <i class="bi bi-plus-circle me-1"></i> Đăng bán ngay
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                var conditionText = item.Condition switch
+                {
+                    TechShare.Models.ProductCondition.LikeNew => "Như mới",
+                    TechShare.Models.ProductCondition.Good => "Tốt",
+                    TechShare.Models.ProductCondition.Fair => "Khá",
+                    TechShare.Models.ProductCondition.Poor => "Cũ",
+                    _ => "N/A"
+                };
+                var conditionBadge = item.Condition switch
+                {
+                    TechShare.Models.ProductCondition.LikeNew => "badge-gradient-success",
+                    TechShare.Models.ProductCondition.Good => "badge-gradient-info",
+                    TechShare.Models.ProductCondition.Fair => "badge-gradient-warning",
+                    _ => "badge-gradient-danger"
+                };
+                var discount = item.OriginalPrice.HasValue && item.OriginalPrice > 0
+                    ? (int)((1 - item.Price / item.OriginalPrice.Value) * 100)
+                    : 0;
+
+                <div class="col-lg-4 col-md-6 reveal">
+                    <div class="product-card card">
+                        <div class="card-img-wrapper">
+                            <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/400x250?text=No+Image" : item.ImageUrl)"
+                                 class="card-img-top" alt="@item.Title">
+                            <div class="card-img-overlay-badge">
+                                <span class="@conditionBadge me-1">@conditionText</span>
+                                @if (discount > 0)
+                                {
+                                    <span class="badge-gradient-danger">-@(discount)%</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <h5 class="card-title mb-0">@item.Title</h5>
+                            </div>
+                            <p class="card-text">@item.Description</p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="fw-bold fs-5" style="color: var(--primary);">@item.Price.ToString("N0")đ</span>
+                                    @if (item.OriginalPrice.HasValue)
+                                    {
+                                        <br />
+                                        <small class="text-muted text-decoration-line-through">@item.OriginalPrice.Value.ToString("N0")đ</small>
+                                    }
+                                </div>
+                                <span class="badge-gradient-info">@item.Category?.Name</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small text-muted">
+                                <span>
+                                    <i class="bi bi-geo-alt me-1"></i>@item.Location
+                                    @if (item.DistanceKm.HasValue)
+                                    {
+                                        <br/><span class="badge bg-light text-dark mt-1 border"><i class="bi bi-cursor-fill text-primary"></i> @item.DistanceKm.Value km</span>
+                                    }
+                                </span>
+                                <span><i class="bi bi-clock me-1"></i>@item.CreatedAt.ToString("dd/MM")</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0 p-3 pt-0">
+                            <div class="d-flex gap-2">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-gradient flex-fill">
+                                    <i class="bi bi-eye me-1"></i> Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

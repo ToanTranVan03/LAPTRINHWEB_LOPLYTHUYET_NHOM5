@@ -1,0 +1,163 @@
+@{
+    ViewData["Title"] = "Câu hỏi thường gặp";
+}
+
+<div class="container py-4">
+    <div class="page-header mb-4">
+        <h1 class="mb-1"><i class="bi bi-question-circle me-2"></i>Câu hỏi thường gặp (FAQ)</h1>
+        <p class="mb-0 opacity-75">Tìm câu trả lời cho những thắc mắc phổ biến nhất</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <!-- Thuê thiết bị -->
+            <div class="faq-section mb-4">
+                <h5 class="fw-bold mb-3" style="color: var(--primary);"><i class="bi bi-bag-check me-2"></i>Về việc thuê thiết bị</h5>
+                <div class="accordion" id="faqRental">
+                    <div class="accordion-item faq-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                Làm thế nào để thuê thiết bị trên TechShare?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqRental">
+                            <div class="accordion-body">
+                                <p>Quy trình thuê rất đơn giản:</p>
+                                <ol>
+                                    <li><strong>Tìm kiếm</strong> thiết bị bạn cần trên trang Sản phẩm</li>
+                                    <li>Nhấn <strong>"Thuê ngay"</strong> hoặc xem Chi tiết để biết thêm thông tin</li>
+                                    <li>Chọn <strong>ngày bắt đầu</strong> và <strong>ngày kết thúc</strong> thuê</li>
+                                    <li>Xác nhận đơn hàng và chờ Admin <strong>duyệt đơn</strong></li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item faq-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                Giá thuê được tính như thế nào?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqRental">
+                            <div class="accordion-body">
+                                Giá thuê được tính theo công thức: <strong>Giá/ngày × Số ngày thuê</strong>. Hệ thống sẽ tự động
+                                tính toán tổng chi phí khi bạn chọn ngày. Ví dụ: thuê MacBook Pro với giá 450.000đ/ngày trong 3 ngày
+                                thì tổng = 1.350.000đ.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item faq-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                Tôi có thể hủy đơn thuê không?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqRental">
+                            <div class="accordion-body">
+                                Bạn có thể liên hệ admin qua trang <a asp-controller="Contact" asp-action="Index">Hỗ trợ</a>
+                                để yêu cầu hủy đơn. Nếu đơn chưa được duyệt (trạng thái Pending), việc hủy sẽ được xử lý
+                                ngay lập tức và miễn phí.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tài khoản -->
+            <div class="faq-section mb-4">
+                <h5 class="fw-bold mb-3" style="color: var(--primary);"><i class="bi bi-person-circle me-2"></i>Tài khoản & Bảo mật</h5>
+                <div class="accordion" id="faqAccount">
+                    <div class="accordion-item faq-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                Đăng ký tài khoản có mất phí không?
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccount">
+                            <div class="accordion-body">
+                                <strong>Hoàn toàn miễn phí!</strong> Bạn chỉ cần email và mật khẩu để tạo tài khoản.
+                                Sau khi đăng ký, bạn có thể bắt đầu thuê thiết bị ngay lập tức.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item faq-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                Xác thực KYC (CCCD) dùng để làm gì?
+                            </button>
+                        </h2>
+                        <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccount">
+                            <div class="accordion-body">
+                                Xác thực KYC giúp đảm bảo an toàn cho cả người thuê và chủ thiết bị. Tài khoản đã xác thực
+                                sẽ được ưu tiên duyệt đơn nhanh hơn và có quyền truy cập các thiết bị có giá trị cao.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item faq-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">
+                                Tôi quên mật khẩu thì phải làm sao?
+                            </button>
+                        </h2>
+                        <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccount">
+                            <div class="accordion-body">
+                                Tại trang đăng nhập, nhấn vào liên kết <strong>"Quên mật khẩu"</strong>. Nhập email đã đăng ký
+                                và hệ thống sẽ gửi link đặt lại mật khẩu cho bạn. Nếu gặp khó khăn, hãy liên hệ
+                                <a asp-controller="Contact" asp-action="Index">đội ngũ hỗ trợ</a>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thanh toán -->
+            <div class="faq-section mb-4">
+                <h5 class="fw-bold mb-3" style="color: var(--primary);"><i class="bi bi-credit-card me-2"></i>Thanh toán & Hoàn tiền</h5>
+                <div class="accordion" id="faqPayment">
+                    <div class="accordion-item faq-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7">
+                                TechShare hỗ trợ những hình thức thanh toán nào?
+                            </button>
+                        </h2>
+                        <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqPayment">
+                            <div class="accordion-body">
+                                Hiện tại TechShare hỗ trợ thanh toán:
+                                <ul>
+                                    <li>💵 Tiền mặt khi nhận hàng (COD)</li>
+                                    <li>🏦 Chuyển khoản ngân hàng</li>
+                                    <li>💳 Ví điện tử (MoMo, ZaloPay, VNPay)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item faq-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8">
+                                Chính sách hoàn tiền như thế nào?
+                            </button>
+                        </h2>
+                        <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqPayment">
+                            <div class="accordion-body">
+                                Nếu thiết bị bị lỗi hoặc không đúng mô tả, bạn sẽ được <strong>hoàn tiền 100%</strong>.
+                                Nếu hủy trước ngày thuê ít nhất 24h, hoàn tiền 100%. Hủy trong ngày thuê hoàn 50%.
+                                Mọi tranh chấp sẽ được giải quyết công bằng bởi đội ngũ Admin.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="text-center mt-5">
+                <div class="card-premium p-4">
+                    <h5 class="fw-bold mb-2">Vẫn còn thắc mắc?</h5>
+                    <p class="text-muted mb-3">Đội ngũ hỗ trợ TechShare luôn sẵn sàng giúp đỡ bạn</p>
+                    <a asp-controller="Contact" asp-action="Index" class="btn btn-gradient px-4">
+                        <i class="bi bi-headset me-1"></i> Liên hệ hỗ trợ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

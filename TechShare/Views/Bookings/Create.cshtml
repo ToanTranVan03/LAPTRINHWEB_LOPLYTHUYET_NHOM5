@@ -1,48 +1,106 @@
 @model TechShare.Models.Booking
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Đặt thuê thiết bị";
+    var product = ViewBag.SelectedProduct as TechShare.Models.Product;
 }
 
-<h1>Create</h1>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-premium">
+                <div class="card-header-gradient text-center">
+                    <h4 class="mb-0"><i class="bi bi-bag-plus me-2"></i> Đặt thuê thiết bị</h4>
+                </div>
+                <div class="card-body p-4 form-premium">
+                    @if (product != null)
+                    {
+                        <div class="d-flex align-items-center bg-light rounded-3 p-3 mb-4">
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "https://via.placeholder.com/100" : product.ImageUrl)"
+                                 class="rounded-3 me-3" style="width: 80px; height: 80px; object-fit: cover;" />
+                            <div>
+                                <h5 class="mb-1 fw-bold">@product.Name</h5>
+                                <p class="mb-0 text-muted small">@product.Category?.Name • @product.Location</p>
+                                <span class="badge-gradient-primary mt-1 d-inline-block">@product.PricePerDay.ToString("N0") đ/ngày</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="pricePerDay" value="@product.PricePerDay" />
+                    }
 
-<h4>Booking</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="StartDate" class="control-label"></label>
-                <input asp-for="StartDate" class="form-control" />
-                <span asp-validation-for="StartDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="EndDate" class="control-label"></label>
-                <input asp-for="EndDate" class="form-control" />
-                <span asp-validation-for="EndDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="TotalAmount" class="control-label"></label>
-                <input asp-for="TotalAmount" class="form-control" />
-                <span asp-validation-for="TotalAmount" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ProductId" class="control-label"></label>
-                <select asp-for="ProductId" class ="form-control" asp-items="ViewBag.ProductId"></select>
-            </div>
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:none;"></div>
 
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="StartDate" class="form-label">
+                                    <i class="bi bi-calendar-event me-1"></i> Ngày bắt đầu
+                                </label>
+                                <input asp-for="StartDate" class="form-control" type="date" id="StartDate" />
+                                <span asp-validation-for="StartDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EndDate" class="form-label">
+                                    <i class="bi bi-calendar-check me-1"></i> Ngày kết thúc
+                                </label>
+                                <input asp-for="EndDate" class="form-control" type="date" id="EndDate" />
+                                <span asp-validation-for="EndDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        @if (product != null)
+                        {
+                            <div class="total-preview bg-light rounded-3 p-3 mt-3 text-center" style="display:none;">
+                                <span class="text-muted">Tạm tính: </span>
+                                <span id="totalDisplay" class="fw-bold fs-5" style="color: var(--primary);"></span>
+                            </div>
+                        }
+
+                        <div class="mb-3 mt-3">
+                            <label asp-for="ProductId" class="form-label">
+                                <i class="bi bi-box-seam me-1"></i> Sản phẩm
+                            </label>
+                            <select asp-for="ProductId" class="form-select" asp-items="ViewBag.ProductId"></select>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a asp-controller="Products" asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Về sản phẩm
+                            </a>
+                            <button type="submit" class="btn btn-gradient-success px-4">
+                                <i class="bi bi-check-lg me-1"></i> Xác nhận đặt thuê
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
+        </div>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const startDate = document.getElementById('StartDate');
+        const endDate = document.getElementById('EndDate');
+        const totalDisplay = document.getElementById('totalDisplay');
+        const pricePerDay = document.getElementById('pricePerDay');
+        const totalPreview = document.querySelector('.total-preview');
+
+        function calculateTotal() {
+            if (startDate && endDate && totalDisplay && pricePerDay) {
+                const start = new Date(startDate.value);
+                const end = new Date(endDate.value);
+                const price = parseFloat(pricePerDay.value);
+                if (start && end && price && end > start) {
+                    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                    const total = days * price;
+                    totalDisplay.textContent = total.toLocaleString('vi-VN') + ' đ (' + days + ' ngày)';
+                    if (totalPreview) totalPreview.style.display = 'block';
+                }
+            }
+        }
+
+        if (startDate) startDate.addEventListener('change', calculateTotal);
+        if (endDate) endDate.addEventListener('change', calculateTotal);
+    </script>
 }
