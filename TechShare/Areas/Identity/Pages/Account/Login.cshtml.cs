@@ -129,7 +129,7 @@ namespace TechShare.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Vui lòng kiểm tra lại email và mật khẩu.");
                     return Page();
                 }
             }

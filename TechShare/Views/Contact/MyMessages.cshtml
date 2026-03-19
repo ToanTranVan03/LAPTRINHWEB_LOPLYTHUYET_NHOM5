@@ -1,0 +1,93 @@
+@model IEnumerable<TechShare.Models.ContactMessage>
+@{
+    ViewData["Title"] = "Hộp thư hỗ trợ";
+}
+
+<div class="container py-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold" style="color: #333;"><i class="bi bi-inbox-fill me-2" style="color: #8A2BE2;"></i>Hộp thư hỗ trợ</h2>
+            <p class="text-muted">Lịch sử các câu hỏi và yêu cầu hỗ trợ của bạn với TechShare.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a asp-controller="Contact" asp-action="Index" class="btn text-white rounded-pill px-4 shadow-sm" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%);">
+                <i class="bi bi-pencil-square me-1"></i> Gửi yêu cầu mới
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm border-0">
+            <i class="bi bi-envelope-paper display-1 text-muted opacity-50 mb-3"></i>
+            <h5 class="fw-semibold text-muted">Bạn chưa gửi yêu cầu hỗ trợ nào.</h5>
+            <p class="text-muted small">Nếu cần giúp đỡ, hãy nhấn nút "Gửi yêu cầu mới" ở trên nhé.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var msg in Model)
+            {
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold fs-5 text-dark">Chủ đề: @msg.Subject</span>
+                                <div class="text-muted small mt-1"><i class="bi bi-clock me-1"></i>Gửi lúc: @msg.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                            <div>
+                                @if (msg.Status == TechShare.Models.ContactStatus.Replied)
+                                {
+                                    <span class="badge bg-success rounded-pill px-3 py-2"><i class="bi bi-check2-circle me-1"></i>Đã phản hồi</span>
+                                }
+                                else if (msg.Status == TechShare.Models.ContactStatus.Read)
+                                {
+                                    <span class="badge bg-info text-dark rounded-pill px-3 py-2"><i class="bi bi-eye me-1"></i>Đang xử lý</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="bi bi-hourglass-split me-1"></i>Chờ xử lý</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="card-body p-4 bg-light">
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px;">
+                                        Bạn
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <div class="bg-white p-3 rounded-4 shadow-sm border text-dark" style="border-top-left-radius: 0 !important; max-width: 800px;">
+                                        @msg.Message
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(msg.AdminReply))
+                            {
+                                <div class="d-flex flex-row-reverse mb-2">
+                                    <div class="flex-shrink-0">
+                                        <div class="text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 45px; height: 45px; background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%);">
+                                            TS
+                                        </div>
+                                    </div>
+                                    <div class="me-3">
+                                        <div class="p-3 rounded-4 shadow-sm text-white" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); border-top-right-radius: 0 !important; max-width: 800px;">
+                                            @Html.Raw(msg.AdminReply.Replace("\n", "<br/>"))
+                                        </div>
+                                        <div class="text-end text-muted small mt-1">
+                                            <i class="bi bi-reply-fill me-1"></i>Admin TechShare trả lời lúc: @(msg.RepliedAt?.ToString("dd/MM/yyyy HH:mm"))
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

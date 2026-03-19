@@ -38,25 +38,25 @@ namespace TechShare.Areas.Identity.Pages.Account
                 var user = await _userManager.FindByEmailAsync(Input.Email);
                 if (user == null)
                 {
-                    TempData["StatusMessage"] = "Vui lòng kiểm tra hộp thư email của bạn để đặt lại mật khẩu.";
+                    TempData["StatusMessage"] = "Không tìm thấy tài khoản với email này.";
                     return RedirectToPage("./Login");
                 }
 
+                // 1. Vẫn tạo Mã Token bảo mật bình thường
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                 
+                // 2. Vẫn tạo đường link khôi phục
                 var callbackUrl = Url.Page(
                     "/Account/ResetPassword",
                     pageHandler: null,
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
 
-                await _emailSender.SendEmailAsync(
-                    Input.Email,
-                    "Đặt lại mật khẩu - TechShare",
-                    $"Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>bấm vào đường link này</a> để tạo mật khẩu mới.");
-
-                TempData["StatusMessage"] = "Vui lòng kiểm tra hộp thư email của bạn để đặt lại mật khẩu.";
+                // 3. TRICK TẠI ĐÂY: KHÔNG GỬI MAIL NỮA!
+                // Hiện luôn một thông báo chứa nút bấm đi thẳng đến trang đổi mật khẩu
+                TempData["StatusMessage"] = $"<a href='{callbackUrl}' class='fw-bold text-success text-decoration-underline'>BẤM VÀO ĐÂY</a> để đổi mật khẩu mới cho {Input.Email}";
+                
                 return RedirectToPage("./Login");
             }
             return Page();

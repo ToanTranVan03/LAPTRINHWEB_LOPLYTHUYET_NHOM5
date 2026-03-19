@@ -185,4 +185,33 @@ public class HomeController : Controller
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
+    [HttpPost]
+    public async Task<IActionResult> UploadAvatar(IFormFile avatarFile)
+    {
+        if (avatarFile != null && avatarFile.Length > 0)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                // Lưu vào thư mục wwwroot/avatars
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                
+                // Lưu ảnh với tên là ID của người dùng
+                var filePath = Path.Combine(uploadsFolder, user.Id + ".jpg");
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await avatarFile.CopyToAsync(stream);
+                }
+                TempData["Message"] = "Cập nhật ảnh đại diện thành công!";
+            }
+        }
+        else
+        {
+            TempData["Message"] = "Vui lòng chọn một bức ảnh.";
+        }
+        
+        // Trả về trang cũ
+        return Redirect(Request.Headers["Referer"].ToString() ?? "/");
+    }
 }

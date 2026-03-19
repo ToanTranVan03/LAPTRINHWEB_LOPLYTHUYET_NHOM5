@@ -18,6 +18,14 @@
                 </div>
 
                 <form id="account" method="post">
+                    
+                    @if (TempData["StatusMessage"] != null)
+                    {
+                        <div class="alert alert-success rounded-3 text-center mb-3 shadow-sm border-0">
+                            <i class="bi bi-check-circle-fill me-1"></i> @Html.Raw(TempData["StatusMessage"])
+                        </div>
+                    }
+
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
 
                     <div class="form-floating mb-3">
@@ -65,7 +73,7 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function() {
-            // Logic Ẩn/Hiện mật khẩu
+            // 1. TÍNH NĂNG ẨN/HIỆN MẬT KHẨU
             $('.toggle-password').click(function() {
                 let targetId = $(this).data('target');
                 let input = $('#' + targetId);
@@ -74,7 +82,26 @@
                 $(this).toggleClass('bi-eye-slash bi-eye');
             });
 
-            // Logic Vị trí
+            // 2. TÍNH NĂNG GHI NHỚ EMAIL (TRICK CHO ĐỒ ÁN)
+            // Kiểm tra xem trước đó có lưu email nào không
+            var savedEmail = localStorage.getItem('techshare_saved_email');
+            if (savedEmail) {
+                $('#Input_Email').val(savedEmail); // Tự động điền email
+                $('#rememberMe').prop('checked', true); // Bật sẵn nút công tắc lên
+            }
+
+            // Bắt sự kiện khi bấm nút Đăng nhập
+            $('#account').submit(function() {
+                if ($('#rememberMe').is(':checked')) {
+                    // Nếu công tắc đang bật -> Lưu email vào bộ nhớ máy
+                    localStorage.setItem('techshare_saved_email', $('#Input_Email').val());
+                } else {
+                    // Nếu công tắc tắt -> Xóa email khỏi bộ nhớ
+                    localStorage.removeItem('techshare_saved_email');
+                }
+            });
+
+            // 3. LOGIC LẤY VỊ TRÍ
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     var lat = position.coords.latitude;

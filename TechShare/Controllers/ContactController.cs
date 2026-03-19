@@ -32,7 +32,20 @@ namespace TechShare.Controllers
             }
             return View();
         }
+// GET: Contact/MyMessages - Lịch sử tin nhắn của người dùng
+        [Authorize] // Bắt buộc đăng nhập mới xem được
+        public async Task<IActionResult> MyMessages()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            // Lấy tất cả tin nhắn do user này gửi, sắp xếp mới nhất lên đầu
+            var myMessages = await _context.ContactMessages
+                .Where(m => m.SenderId == userId)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
 
+            return View(myMessages);
+        }
         // POST: Contact - Gửi tin nhắn
         [HttpPost]
         [ValidateAntiForgeryToken]
