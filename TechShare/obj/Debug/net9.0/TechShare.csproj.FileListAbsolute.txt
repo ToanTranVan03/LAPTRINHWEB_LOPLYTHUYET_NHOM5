@@ -1415,5 +1415,5 @@ C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\.codex_build\runtimes\win-
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\.codex_build\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\.codex_build\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\obj\Debug\net9.0\compressed\bp8pap2y8f-{0}-9qujsc1hax-9qujsc1hax.gz
-D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\bp8pap2y8f-{0}-nbkb248krk-nbkb248krk.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\zyganq79kj-{0}-acnjigngjd-acnjigngjd.gz
+D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\bp8pap2y8f-{0}-3ef974kv7s-3ef974kv7s.gz
