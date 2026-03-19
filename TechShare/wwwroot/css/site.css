@@ -1154,3 +1154,22 @@ body {
 .btn-wishlist.active {
     color: #eb3349;
 }
+/* Thu nhỏ khoảng cách menu để tránh bị xuống dòng */
+.nav-link-custom {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    font-size: 0.9rem; /* Hạ nhẹ kích thước chữ xuống một chút */
+    white-space: nowrap; /* Tuyệt đối không cho phép xuống dòng */
+}
+
+/* Giảm khoảng cách giữa icon và chữ */
+.nav-link-custom i {
+    margin-right: 3px !important;
+}
+
+/* Nếu màn hình trung bình, ẩn bớt chữ ở các mục phụ */
+@media (max-width: 1250px) {
+    .nav-link-custom span {
+        display: none; 
+    }
+}
