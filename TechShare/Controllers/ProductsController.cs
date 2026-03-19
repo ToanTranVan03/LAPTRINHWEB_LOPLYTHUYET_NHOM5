@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Security.Claims;
+using System.Text.Json;
 using TechShare.Data;
 using TechShare.Models;
 using TechShare.ViewModels;
@@ -12,6 +14,7 @@ namespace TechShare.Controllers
     public class ProductsController : Controller
     {
         private const int PageSize = 9;
+        private static readonly HttpClient GeoHttpClient = BuildGeoHttpClient();
         private readonly ApplicationDbContext _context;
 
         public ProductsController(ApplicationDbContext context)
@@ -204,7 +207,7 @@ namespace TechShare.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Description,PricePerDay,Location,IsAvailable,CategoryId")] Product product, IFormFile imageFile)
+        public async Task<IActionResult> Create([Bind("Name,Description,PricePerDay,Location,Latitude,Longitude,IsAvailable,CategoryId")] Product product, IFormFile imageFile)
         {
             if (imageFile != null && imageFile.Length > 0)
             {
@@ -261,7 +264,7 @@ namespace TechShare.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,PricePerDay,ImageUrl,Location,IsAvailable,CategoryId,OwnerId")] Product product, IFormFile imageFile)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,PricePerDay,ImageUrl,Location,Latitude,Longitude,IsAvailable,CategoryId,OwnerId")] Product product, IFormFile imageFile)
         {
             if (id != product.Id) return NotFound();
 
@@ -306,6 +309,39 @@ namespace TechShare.Controllers
 
             ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", product.CategoryId);
             return View(product);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("api/location/fallback")]
+        public async Task<IActionResult> FallbackLocationByIp()
+        {
+            var providers = new[]
+            {
+                "https://ipapi.co/json/",
+                "https://ipwho.is/",
+                "https://ipinfo.io/json"
+            };
+
+            foreach (var providerUrl in providers)
+            {
+                try
+                {
+                    using var response = await GeoHttpClient.GetAsync(providerUrl);
+                    if (!response.IsSuccessStatusCode) continue;
+
+                    var json = await response.Content.ReadAsStringAsync();
+                    if (TryParseIpGeoJson(json, out var lat, out var lng, out var area))
+                    {
+                        return Json(new { lat, lng, area, source = "ip" });
+                    }
+                }
+                catch
+                {
+                    // Try next provider
+                }
+            }
+
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Khong lay duoc vi tri theo IP." });
         }
 
         [Authorize]
@@ -383,6 +419,86 @@ namespace TechShare.Controllers
                 "newest" => products.OrderByDescending(p => p.Id),
                 _ => products.OrderByDescending(p => p.Id)
             };
+        }
+
+        private static HttpClient BuildGeoHttpClient()
+        {
+            var client = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(6)
+            };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("TechShare/1.0 (Location Fallback)");
+            return client;
+        }
+
+        private static bool TryParseIpGeoJson(string json, out double lat, out double lng, out string area)
+        {
+            lat = 0;
+            lng = 0;
+            area = string.Empty;
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            var hasLat = TryReadDouble(root, "latitude", out lat) || TryReadDouble(root, "lat", out lat);
+            var hasLng = TryReadDouble(root, "longitude", out lng) || TryReadDouble(root, "lon", out lng);
+
+            if (!hasLat || !hasLng)
+            {
+                if (root.TryGetProperty("loc", out var locElement) && locElement.ValueKind == JsonValueKind.String)
+                {
+                    var loc = locElement.GetString();
+                    var parts = loc?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                    if (parts is { Length: 2 } &&
+                        double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out lat) &&
+                        double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out lng))
+                    {
+                        hasLat = true;
+                        hasLng = true;
+                    }
+                }
+            }
+
+            if (!hasLat || !hasLng)
+            {
+                return false;
+            }
+
+            var city = TryReadString(root, "city");
+            var region = TryReadString(root, "region");
+            var country = TryReadString(root, "country_name") ?? TryReadString(root, "country");
+
+            area = string.Join(", ", new[] { city, region, country }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            return true;
+        }
+
+        private static bool TryReadDouble(JsonElement root, string propertyName, out double value)
+        {
+            value = 0;
+            if (!root.TryGetProperty(propertyName, out var element)) return false;
+
+            if (element.ValueKind == JsonValueKind.Number)
+            {
+                return element.TryGetDouble(out value);
+            }
+
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                return double.TryParse(element.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+            }
+
+            return false;
+        }
+
+        private static string? TryReadString(JsonElement root, string propertyName)
+        {
+            if (!root.TryGetProperty(propertyName, out var element) || element.ValueKind != JsonValueKind.String)
+            {
+                return null;
+            }
+
+            var value = element.GetString();
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
     }
 }

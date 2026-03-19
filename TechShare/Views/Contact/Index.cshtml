@@ -66,7 +66,15 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label asp-for="Phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
-                                    <input asp-for="Phone" class="form-control" placeholder="0912 345 678" />
+                                    <input asp-for="Phone"
+                                           class="form-control"
+                                           type="tel"
+                                           placeholder="Nhập số điện thoại"
+                                           autocomplete="off"
+                                           inputmode="numeric"
+                                           autocorrect="off"
+                                           autocapitalize="off"
+                                           spellcheck="false" />
                                     <span asp-validation-for="Phone" class="text-danger small"></span>
                                 </div>
                                 <div class="col-md-6">
