@@ -8,50 +8,50 @@
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-5 col-md-7">
-            <div class="card-premium p-4 p-md-5">
+            <div class="card shadow-lg border-0 rounded-4 p-4 p-md-5" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
                 <div class="text-center mb-4">
-                    <div class="mb-3" style="font-size: 3rem;">
-                        <i class="bi bi-box-arrow-in-right" style="background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                    <div class="mb-3">
+                        <i class="bi bi-person-circle display-4" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
                     </div>
-                    <h2 class="fw-bold mb-1">Đăng nhập</h2>
+                    <h2 class="fw-bold mb-1" style="color: #333;">Đăng nhập</h2>
                     <p class="text-muted">Chào mừng bạn quay trở lại TechShare</p>
                 </div>
 
-                <form id="account" method="post" class="form-premium">
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <form id="account" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
 
-                    <div class="mb-3">
-                        <label asp-for="Input.Email" class="form-label">
-                            <i class="bi bi-envelope me-1" style="color: var(--primary);"></i> Email
+                    <div class="form-floating mb-3">
+                        <input asp-for="Input.Email" class="form-control rounded-3 border-secondary border-opacity-25" autocomplete="username" placeholder="Ví dụ: you@email.com" />
+                        <label asp-for="Input.Email" class="text-muted">
+                            <i class="bi bi-envelope-fill me-1" style="color: #8A2BE2;"></i> Email của bạn
                         </label>
-                        <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="you@email.com" />
-                        <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                        <span asp-validation-for="Input.Email" class="text-danger small px-2"></span>
                     </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Input.Password" class="form-label">
-                            <i class="bi bi-lock me-1" style="color: var(--primary);"></i> Mật khẩu
+                    <div class="form-floating mb-3 position-relative">
+                        <input asp-for="Input.Password" class="form-control rounded-3 border-secondary border-opacity-25 pe-5" autocomplete="current-password" placeholder="Nhập mật khẩu của bạn" id="loginPassword" />
+                        <label asp-for="Input.Password" class="text-muted">
+                            <i class="bi bi-shield-lock-fill me-1" style="color: #8A2BE2;"></i> Mật khẩu
                         </label>
-                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" placeholder="Nhập mật khẩu" />
-                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                        <i class="bi bi-eye-slash position-absolute top-50 end-0 translate-middle-y me-3 fs-5 text-muted toggle-password" data-target="loginPassword" style="cursor: pointer; z-index: 10;" title="Hiện/Ẩn mật khẩu"></i>
+                        <span asp-validation-for="Input.Password" class="text-danger small px-2"></span>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="form-check">
-                            <input class="form-check-input" asp-for="Input.RememberMe" />
-                            <label asp-for="Input.RememberMe" class="form-check-label text-muted small">
-                                Ghi nhớ đăng nhập
-                            </label>
+                    <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input shadow-none" type="checkbox" asp-for="Input.RememberMe" id="rememberMe">
+                            <label class="form-check-label text-muted small user-select-none" for="rememberMe">Ghi nhớ tôi</label>
                         </div>
+                        <a id="forgot-password" asp-page="./ForgotPassword" class="small fw-bold text-decoration-none" style="color: #8A2BE2;">Quên mật khẩu?</a>
                     </div>
 
-                    <button id="login-submit" type="submit" class="btn btn-gradient btn-lg w-100 mb-3">
-                        <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập
+                    <button id="login-submit" type="submit" class="btn btn-lg w-100 text-white shadow rounded-3 mb-4 fw-bold" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%); border: none;">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Đăng nhập
                     </button>
 
                     <div class="text-center">
                         <span class="text-muted">Chưa có tài khoản?</span>
-                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="fw-semibold" style="color: var(--primary);">
+                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="fw-bold text-decoration-none ms-1" style="color: #8A2BE2;">
                             Đăng ký miễn phí
                         </a>
                     </div>
@@ -65,12 +65,20 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function() {
+            // Logic Ẩn/Hiện mật khẩu
+            $('.toggle-password').click(function() {
+                let targetId = $(this).data('target');
+                let input = $('#' + targetId);
+                let type = input.attr('type') === 'password' ? 'text' : 'password';
+                input.attr('type', type);
+                $(this).toggleClass('bi-eye-slash bi-eye');
+            });
+
+            // Logic Vị trí
             if ("geolocation" in navigator) {
-                // Yêu cầu quyền vị trí khi vào trang đăng nhập
                 navigator.geolocation.getCurrentPosition(function(position) {
                     var lat = position.coords.latitude;
                     var lng = position.coords.longitude;
-                    // Lưu vào cookie 7 ngày
                     document.cookie = "user_lat=" + lat + ";path=/;max-age=" + (7*24*60*60);
                     document.cookie = "user_lng=" + lng + ";path=/;max-age=" + (7*24*60*60);
                 }, function(error) {

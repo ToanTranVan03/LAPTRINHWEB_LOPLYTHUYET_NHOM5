@@ -710,7 +710,6 @@ D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\nezrqnk58p-{0}-muycvpuw
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\v0zgfp0y55-{0}-87fc7y1x7t-87fc7y1x7t.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\yfc7ypekbg-{0}-mlv21k5csn-mlv21k5csn.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\0485tg9we9-{0}-61n19gt1b8-61n19gt1b8.gz
-D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\zyganq79kj-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\ldk29kr3zz-{0}-bqjiyaj88i-bqjiyaj88i.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\jws2ekb7ir-{0}-c2jlpeoesf-c2jlpeoesf.gz
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\soysx1w925-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -783,7 +782,6 @@ D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\refint\TechShare.dll
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\TechShare.pdb
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\TechShare.genruntimeconfig.cache
 D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\ref\TechShare.dll
-D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\bp8pap2y8f-{0}-wkzi6yj5yt-wkzi6yj5yt.gz
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\bin\Debug\net9.0\appsettings.Development.json
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\bin\Debug\net9.0\appsettings.json
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\bin\Debug\net9.0\TechShare.staticwebassets.runtime.json
@@ -1417,3 +1415,5 @@ C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\.codex_build\runtimes\win-
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\.codex_build\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\.codex_build\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 C:\Users\ACER\LAPTRINHWEB_LOPLYTHUYET_NHOM5\TechShare\obj\Debug\net9.0\compressed\bp8pap2y8f-{0}-9qujsc1hax-9qujsc1hax.gz
+D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\bp8pap2y8f-{0}-nbkb248krk-nbkb248krk.gz
+D:\DOANLAPTRINHWEB\TechShare\obj\Debug\net9.0\compressed\zyganq79kj-{0}-acnjigngjd-acnjigngjd.gz

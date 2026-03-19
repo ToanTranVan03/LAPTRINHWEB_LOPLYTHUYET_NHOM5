@@ -7,57 +7,59 @@
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-5 col-md-7">
-            <div class="card-premium p-4 p-md-5">
+            <div class="card shadow-lg border-0 rounded-4 p-4 p-md-5" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
                 <div class="text-center mb-4">
-                    <div class="mb-3" style="font-size: 3rem;">
-                        <i class="bi bi-person-plus-fill" style="background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                    <div class="mb-3">
+                        <i class="bi bi-person-plus-fill display-4" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
                     </div>
-                    <h2 class="fw-bold mb-1">Đăng ký tài khoản</h2>
-                    <p class="text-muted">Tạo tài khoản TechShare miễn phí để bắt đầu thuê & mua bán thiết bị</p>
+                    <h2 class="fw-bold mb-1" style="color: #333;">Tạo tài khoản</h2>
+                    <p class="text-muted">Gia nhập cộng đồng TechShare ngay hôm nay!</p>
                 </div>
 
-                <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-premium">
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
 
-                    <div class="mb-3">
-                        <label asp-for="Input.FullName" class="form-label">
-                            <i class="bi bi-person me-1" style="color: var(--primary);"></i> Họ và tên <span class="text-danger">*</span>
+                    <div class="form-floating mb-3">
+                        <input asp-for="Input.FullName" class="form-control rounded-3 border-secondary border-opacity-25" placeholder="Ví dụ: Trần Văn Đình" />
+                        <label asp-for="Input.FullName" class="text-muted">
+                            <i class="bi bi-person-badge-fill me-1" style="color: #8A2BE2;"></i> Họ và tên <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="Input.FullName" class="form-control" placeholder="Nhập họ và tên đầy đủ" />
-                        <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                        <span asp-validation-for="Input.FullName" class="text-danger small px-2"></span>
                     </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Input.Email" class="form-label">
-                            <i class="bi bi-envelope me-1" style="color: var(--primary);"></i> Email <span class="text-danger">*</span>
+                    <div class="form-floating mb-3">
+                        <input asp-for="Input.Email" class="form-control rounded-3 border-secondary border-opacity-25" autocomplete="username" placeholder="Ví dụ: you@email.com" />
+                        <label asp-for="Input.Email" class="text-muted">
+                            <i class="bi bi-envelope-fill me-1" style="color: #8A2BE2;"></i> Email <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="you@email.com" />
-                        <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                        <span asp-validation-for="Input.Email" class="text-danger small px-2"></span>
                     </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Input.Password" class="form-label">
-                            <i class="bi bi-lock me-1" style="color: var(--primary);"></i> Mật khẩu <span class="text-danger">*</span>
+                    <div class="form-floating mb-3 position-relative">
+                        <input asp-for="Input.Password" class="form-control rounded-3 border-secondary border-opacity-25 pe-5" autocomplete="new-password" placeholder="Mật khẩu tối thiểu 6 ký tự" id="registerPassword" />
+                        <label asp-for="Input.Password" class="text-muted">
+                            <i class="bi bi-key-fill me-1" style="color: #8A2BE2;"></i> Mật khẩu <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" placeholder="Tối thiểu 3 ký tự" />
-                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                        <i class="bi bi-eye-slash position-absolute top-50 end-0 translate-middle-y me-3 fs-5 text-muted toggle-password" data-target="registerPassword" style="cursor: pointer; z-index: 10;" title="Hiện/Ẩn mật khẩu"></i>
+                        <span asp-validation-for="Input.Password" class="text-danger small px-2"></span>
                     </div>
 
-                    <div class="mb-4">
-                        <label asp-for="Input.ConfirmPassword" class="form-label">
-                            <i class="bi bi-lock-fill me-1" style="color: var(--primary);"></i> Xác nhận mật khẩu <span class="text-danger">*</span>
+                    <div class="form-floating mb-4 position-relative">
+                        <input asp-for="Input.ConfirmPassword" class="form-control rounded-3 border-secondary border-opacity-25 pe-5" autocomplete="new-password" placeholder="Nhập lại mật khẩu vừa tạo" id="confirmPassword" />
+                        <label asp-for="Input.ConfirmPassword" class="text-muted">
+                            <i class="bi bi-check-circle-fill me-1" style="color: #8A2BE2;"></i> Xác nhận mật khẩu <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
-                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+                        <i class="bi bi-eye-slash position-absolute top-50 end-0 translate-middle-y me-3 fs-5 text-muted toggle-password" data-target="confirmPassword" style="cursor: pointer; z-index: 10;" title="Hiện/Ẩn mật khẩu"></i>
+                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger small px-2"></span>
                     </div>
 
-                    <button id="registerSubmit" type="submit" class="btn btn-gradient btn-lg w-100 mb-3">
-                        <i class="bi bi-person-check me-1"></i> Đăng ký
+                    <button id="registerSubmit" type="submit" class="btn btn-lg w-100 text-white shadow rounded-3 mb-4 fw-bold" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%); border: none;">
+                        <i class="bi bi-person-check-fill me-2"></i> Đăng ký ngay
                     </button>
 
                     <div class="text-center">
                         <span class="text-muted">Đã có tài khoản?</span>
-                        <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="fw-semibold" style="color: var(--primary);">
+                        <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="fw-bold text-decoration-none ms-1" style="color: #8A2BE2;">
                             Đăng nhập ngay
                         </a>
                     </div>
@@ -69,4 +71,16 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // Logic Ẩn/Hiện mật khẩu dùng chung cho cả 2 ô
+            $('.toggle-password').click(function() {
+                let targetId = $(this).data('target');
+                let input = $('#' + targetId);
+                let type = input.attr('type') === 'password' ? 'text' : 'password';
+                input.attr('type', type);
+                $(this).toggleClass('bi-eye-slash bi-eye');
+            });
+        });
+    </script>
 }
