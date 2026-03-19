@@ -65,6 +65,12 @@
                                 <input type="hidden" asp-for="Latitude" id="latInput" />
                                 <input type="hidden" asp-for="Longitude" id="lngInput" />
                                 <span asp-validation-for="Location" class="text-danger small"></span>
+                                <div id="locationDetailPanel" class="border rounded-3 p-2 mt-2 bg-light-subtle small" style="display:none;">
+                                    <div class="fw-semibold text-dark mb-1">Chi tiết vị trí</div>
+                                    <div id="locationDetailSummary" class="text-dark"></div>
+                                    <div id="locationDetailAddress" class="text-muted"></div>
+                                    <div id="locationDetailMeta" class="text-muted"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -125,35 +131,230 @@
         });
 
         // Xử lý nút Lấy vị trí
-        document.getElementById('btnGetLocation').addEventListener('click', function() {
-            var btn = this;
-            if ("geolocation" in navigator) {
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    document.getElementById('latInput').value = position.coords.latitude;
-                    document.getElementById('lngInput').value = position.coords.longitude;
-                    
-                    // Fetch geocoding API to get address (đây là mock giả lập tên dựa trên API Nominatim public)
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data && data.display_name) {
-                                document.getElementById('locationInput').value = data.address.city || data.address.state || 'Vị trí hiện tại của tôi';
-                            }
-                            btn.innerHTML = '<i class="bi bi-crosshair"></i>';
-                        })
-                        .catch(err => {
-                            document.getElementById('locationInput').value = `Đã lấy tọa độ (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`;
-                            btn.innerHTML = '<i class="bi bi-crosshair"></i>';
-                        });
+        const btnGetLocation = document.getElementById('btnGetLocation');
+        const locationInput = document.getElementById('locationInput');
+        const latInput = document.getElementById('latInput');
+        const lngInput = document.getElementById('lngInput');
+        const locationDetailPanel = document.getElementById('locationDetailPanel');
+        const locationDetailSummary = document.getElementById('locationDetailSummary');
+        const locationDetailAddress = document.getElementById('locationDetailAddress');
+        const locationDetailMeta = document.getElementById('locationDetailMeta');
 
-                }, function(error) {
-                    alert("Không thể lấy vị trí. Vui lòng cấp quyền trong trình duyệt.");
-                    btn.innerHTML = '<i class="bi bi-crosshair"></i>';
+        const setLoading = (isLoading) => {
+            if (!btnGetLocation) return;
+            btnGetLocation.disabled = isLoading;
+            btnGetLocation.innerHTML = isLoading
+                ? '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+                : '<i class="bi bi-crosshair"></i>';
+        };
+
+        const setCoordinates = (lat, lng) => {
+            if (latInput) latInput.value = lat;
+            if (lngInput) lngInput.value = lng;
+        };
+
+        const renderLocationDetail = ({ lat, lng, accuracy, source, shortArea, fullAddress }) => {
+            if (!locationDetailPanel) return;
+
+            const latText = Number.isFinite(Number(lat)) ? Number(lat).toFixed(6) : "-";
+            const lngText = Number.isFinite(Number(lng)) ? Number(lng).toFixed(6) : "-";
+            const accuracyText = Number.isFinite(Number(accuracy))
+                ? `Độ chính xác ~${Math.round(Number(accuracy))}m`
+                : "Độ chính xác: không xác định";
+
+            if (locationDetailSummary) {
+                locationDetailSummary.textContent = shortArea || fullAddress || "Đã lấy vị trí";
+            }
+            if (locationDetailAddress) {
+                locationDetailAddress.textContent = fullAddress ? `Địa chỉ đầy đủ: ${fullAddress}` : "";
+            }
+            if (locationDetailMeta) {
+                locationDetailMeta.textContent = `Lat: ${latText}, Lng: ${lngText} | ${accuracyText} | Nguồn: ${source} | Lúc: ${new Date().toLocaleString("vi-VN")}`;
+            }
+
+            locationDetailPanel.style.display = "block";
+        };
+
+        const getCurrentPosition = (options) => {
+            return new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, options);
+            });
+        };
+
+        const reverseGeocode = async (lat, lng) => {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&zoom=18&lat=${lat}&lon=${lng}`, {
+                    headers: { "Accept-Language": "vi,en" }
                 });
-            } else {
+
+                if (!response.ok) return null;
+
+                const data = await response.json();
+                const address = data?.address;
+
+                const cityPart = address?.city || address?.town || address?.state;
+                const districtPart = address?.city_district || address?.suburb || address?.county || address?.state_district;
+                const shortArea = [districtPart, cityPart]
+                    .filter(part => !!part)
+                    .join(", ")
+                    || cityPart
+                    || data?.display_name
+                    || null;
+
+                return {
+                    shortArea,
+                    fullAddress: data?.display_name || shortArea || null
+                };
+            } catch {
+                return null;
+            }
+        };
+
+        const getLocationFromIp = async () => {
+            // Prefer same-origin endpoint to avoid browser CORS/ad-block issues.
+            try {
+                const localResponse = await fetch("/api/location/fallback", { cache: "no-store" });
+                if (localResponse.ok) {
+                    const data = await localResponse.json();
+                    const lat = Number(data?.lat);
+                    const lng = Number(data?.lng);
+                    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                        return { lat, lng, area: data?.area || null };
+                    }
+                }
+            } catch {
+                // Continue to direct providers
+            }
+
+            const providers = [
+                {
+                    url: "https://ipapi.co/json/",
+                    parse: (data) => ({ lat: data?.latitude, lng: data?.longitude, area: data?.city || data?.region })
+                },
+                {
+                    url: "https://ipwho.is/",
+                    parse: (data) => ({ lat: data?.latitude, lng: data?.longitude, area: data?.city || data?.region })
+                }
+            ];
+
+            for (const provider of providers) {
+                try {
+                    const response = await fetch(provider.url);
+                    if (!response.ok) continue;
+                    const data = await response.json();
+                    const parsed = provider.parse(data);
+                    const lat = Number(parsed.lat);
+                    const lng = Number(parsed.lng);
+
+                    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                        return { lat, lng, area: parsed.area || null };
+                    }
+                } catch {
+                    // Try next provider
+                }
+            }
+
+            return null;
+        };
+
+        const tryGetBrowserLocation = async () => {
+            try {
+                return await getCurrentPosition({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+            } catch (error) {
+                // Retry with less strict options and longer timeout if browser cannot lock quickly.
+                if (error?.code === 2 || error?.code === 3) {
+                    return await getCurrentPosition({ enableHighAccuracy: false, timeout: 35000, maximumAge: 0 });
+                }
+                throw error;
+            }
+        };
+
+        btnGetLocation?.addEventListener('click', async function () {
+            if (!("geolocation" in navigator)) {
                 alert("Trình duyệt không hỗ trợ Geolocation.");
+                return;
+            }
+
+            if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+                alert("Geolocation chỉ hoạt động trên HTTPS hoặc localhost.");
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const position = await tryGetBrowserLocation();
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const accuracyMeters = Number(position.coords.accuracy);
+
+                if (Number.isFinite(accuracyMeters) && accuracyMeters > 1200) {
+                    const keepCoarseLocation = confirm(`GPS đang có độ chính xác thấp (~${Math.round(accuracyMeters)}m).\nBạn có muốn dùng vị trí này không?`);
+                    if (!keepCoarseLocation) {
+                        alert("Đã bỏ qua vị trí GPS chưa chính xác. Hãy thử lại hoặc nhập tay.");
+                        return;
+                    }
+                }
+
+                setCoordinates(lat, lng);
+
+                const areaName = await reverseGeocode(lat, lng);
+                if (locationInput) {
+                    locationInput.value = areaName?.shortArea || areaName?.fullAddress || `Đã lấy tọa độ (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                }
+
+                renderLocationDetail({
+                    lat,
+                    lng,
+                    accuracy: accuracyMeters,
+                    source: "GPS",
+                    shortArea: areaName?.shortArea || null,
+                    fullAddress: areaName?.fullAddress || null
+                });
+                return;
+            } catch (error) {
+                console.error("Geolocation failed:", error);
+
+                if (error?.code === 1) {
+                    alert("Trình duyệt đang chặn quyền vị trí. Hãy cho phép location cho site này.");
+                    return;
+                }
+
+                const ipLocation = await getLocationFromIp();
+                if (ipLocation) {
+                    const areaName = ipLocation.area || `Vị trí gần đúng theo IP (${ipLocation.lat.toFixed(4)}, ${ipLocation.lng.toFixed(4)})`;
+                    const accepted = confirm(`Không lấy được GPS chính xác.\nBạn có muốn dùng vị trí gần đúng theo IP: ${areaName} ?`);
+                    if (accepted) {
+                        setCoordinates(ipLocation.lat, ipLocation.lng);
+                        if (locationInput) {
+                            locationInput.value = areaName;
+                        }
+                        renderLocationDetail({
+                            lat: ipLocation.lat,
+                            lng: ipLocation.lng,
+                            accuracy: null,
+                            source: "IP",
+                            shortArea: areaName,
+                            fullAddress: areaName
+                        });
+                        alert("Đã dùng vị trí gần đúng theo IP.");
+                    } else {
+                        alert("Chưa điền vị trí tự động. Bạn có thể bấm lại để lấy GPS hoặc nhập tay.");
+                    }
+                    return;
+                }
+
+                const reason = error?.code === 2
+                    ? "Thiết bị không xác định được vị trí hiện tại."
+                    : error?.code === 3
+                        ? "Yêu cầu lấy vị trí bị timeout."
+                        : "Không thể lấy vị trí lúc này.";
+
+                alert(`${reason} Thử lại sau hoặc nhập khu vực thủ công.`);
+            } finally {
+                setLoading(false);
             }
         });
     </script>
 }
+

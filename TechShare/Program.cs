@@ -39,7 +39,6 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/Identity/Account/Logout";
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
 });
-builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, TechShare.Services.EmailSender>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

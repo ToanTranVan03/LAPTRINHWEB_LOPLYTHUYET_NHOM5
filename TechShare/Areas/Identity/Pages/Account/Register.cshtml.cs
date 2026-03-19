@@ -110,16 +110,33 @@ namespace TechShare.Areas.Identity.Pages.Account
                         values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
                         protocol: Request.Scheme);
 
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    var emailSent = true;
+                    try
+                    {
+                        await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                            $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    }
+                    catch (Exception ex)
+                    {
+                        emailSent = false;
+                        _logger.LogWarning(ex, "Can not send confirmation email for {Email}.", Input.Email);
+                    }
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
+                        if (!emailSent)
+                        {
+                            TempData["Message"] = "Đăng ký thành công nhưng chưa gửi được email xác nhận. Vui lòng thử lại sau.";
+                            return RedirectToPage("Login");
+                        }
+
                         return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
                     }
                     else
                     {
-                        TempData["Message"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập lại.";
+                        TempData["Message"] = emailSent
+                            ? "Đăng ký tài khoản thành công! Vui lòng đăng nhập lại."
+                            : "Đăng ký tài khoản thành công! (Hệ thống email đang tạm lỗi) Vui lòng đăng nhập lại.";
                         return RedirectToPage("Login");
                     }
                 }
