@@ -2,16 +2,29 @@ using Microsoft.AspNetCore.Identity;
 using TechShare.Data;
 using TechShare.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
+using System.Globalization;
+using System.Net;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace TechShare.Services
 {
     public static class SeedData
     {
+        private static readonly HttpClient SeedImageHttpClient = new()
+        {
+            Timeout = TimeSpan.FromSeconds(8)
+        };
+
         public static async Task InitializeAsync(IServiceProvider serviceProvider)
         {
             var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var env = serviceProvider.GetRequiredService<IWebHostEnvironment>();
 
             await context.Database.EnsureCreatedAsync();
 
@@ -379,6 +392,9 @@ namespace TechShare.Services
                 await context.SaveChangesAsync();
             }
 
+            await RemoveGeneratedSeedProductsAsync(context);
+            await BackfillProductCoordinatesAsync(context);
+
             // ============================================================
             // 5. SEED BOOKINGS (dữ liệu mẫu mở rộng - 12 đơn)
             // ============================================================
@@ -670,5 +686,976 @@ namespace TechShare.Services
                 }
             }
         }
+
+        private static async Task BackfillProductCoordinatesAsync(ApplicationDbContext context)
+        {
+            var products = await context.Products.ToListAsync();
+            if (!products.Any()) return;
+
+            var changed = false;
+            foreach (var product in products)
+            {
+                var hasValidCoords = product.Latitude.HasValue && product.Longitude.HasValue &&
+                                     product.Latitude.Value >= -90 && product.Latitude.Value <= 90 &&
+                                     product.Longitude.Value >= -180 && product.Longitude.Value <= 180;
+
+                if (hasValidCoords) continue;
+
+                if (TryResolveCoordinatesFromLocation(product.Location, out var lat, out var lng))
+                {
+                    product.Latitude = lat;
+                    product.Longitude = lng;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task RemoveGeneratedSeedProductsAsync(ApplicationDbContext context)
+        {
+            var generatedProducts = await context.Products
+                .Where(p => p.Description != null &&
+                            (EF.Functions.Like(p.Description, "%Mã mẫu #%") ||
+                             EF.Functions.Like(p.Description, "%Ma mau #%")))
+                .ToListAsync();
+
+            if (!generatedProducts.Any())
+            {
+                return;
+            }
+
+            context.Products.RemoveRange(generatedProducts);
+            await context.SaveChangesAsync();
+        }
+
+        private static bool TryResolveCoordinatesFromLocation(string? location, out double lat, out double lng)
+        {
+            lat = 0;
+            lng = 0;
+            if (string.IsNullOrWhiteSpace(location)) return false;
+
+            var key = NormalizeLocationKey(location);
+
+            var locationMap = new (string Key, double Lat, double Lng)[]
+            {
+                ("ha noi - cau giay", 21.0366, 105.7906),
+                ("ha noi - dong da", 21.0180, 105.8293),
+                ("ha noi - hoan kiem", 21.0288, 105.8522),
+                ("ha noi - tay ho", 21.0700, 105.8180),
+                ("ha noi - hoang mai", 20.9741, 105.8588),
+                ("ha noi - nam tu liem", 21.0032, 105.7707),
+                ("ha noi - hai ba trung", 21.0058, 105.8576),
+                ("tp. hcm - quan 1", 10.7757, 106.7004),
+                ("tp. hcm - quan 2", 10.7872, 106.7498),
+                ("tp. hcm - quan 3", 10.7866, 106.6823),
+                ("tp. hcm - quan 7", 10.7343, 106.7218),
+                ("tp. hcm - quan 10", 10.7726, 106.6677),
+                ("tp. hcm - go vap", 10.8400, 106.6650),
+                ("tp. hcm - binh thanh", 10.8085, 106.7091),
+                ("da nang - hai chau", 16.0471, 108.2197),
+                ("da nang - son tra", 16.0756, 108.2397),
+                ("da nang - thanh khe", 16.0715, 108.1956),
+                ("da nang - ngu hanh son", 16.0389, 108.2520),
+                ("nha trang - tran phu", 12.2388, 109.1967),
+                ("thu duc", 10.8537, 106.7887)
+            };
+
+            foreach (var entry in locationMap)
+            {
+                if (key.Contains(entry.Key))
+                {
+                    lat = entry.Lat;
+                    lng = entry.Lng;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string NormalizeLocationKey(string input)
+        {
+            var normalized = input.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder(normalized.Length);
+
+            foreach (var c in normalized)
+            {
+                var category = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (category != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(c == 'đ' ? 'd' : c);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        private static async Task EnsureProductsPerCategoryAsync(
+            ApplicationDbContext context,
+            string ownerId,
+            string webRootPath)
+        {
+            const int targetPerCategory = 20;
+
+            var categories = await context.Categories.OrderBy(c => c.Id).ToListAsync();
+            if (!categories.Any())
+            {
+                return;
+            }
+
+            var categoryDefinitions = GetCategoryDefinitions();
+            var categoryMap = ResolveCategoryMap(categories, categoryDefinitions);
+            var existingProducts = await context.Products.ToListAsync();
+            var existingNames = new HashSet<string>(existingProducts.Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
+            var productsToAdd = new List<Product>();
+
+            foreach (var definition in categoryDefinitions)
+            {
+                if (!categoryMap.TryGetValue(definition.Key, out var category))
+                {
+                    continue;
+                }
+
+                var existingInCategory = existingProducts.Count(p => p.CategoryId == category.Id);
+                if (existingInCategory >= targetPerCategory)
+                {
+                    continue;
+                }
+
+                var needed = targetPerCategory - existingInCategory;
+                for (var i = 0; i < needed; i++)
+                {
+                    var sequence = existingInCategory + i + 1;
+                    var model = definition.Models[(sequence - 1) % definition.Models.Length];
+                    var edition = definition.Editions[((sequence - 1) / definition.Models.Length) % definition.Editions.Length];
+                    var baseName = $"{model} {edition}";
+                    var productName = EnsureUniqueName(baseName, existingNames);
+                    var location = definition.Locations[(sequence - 1) % definition.Locations.Length];
+                    var price = definition.BasePrice + (((sequence - 1) % 6) * definition.PriceStep);
+                    var imageUrl = EnsureProductImage(
+                        webRootPath,
+                        definition.Key,
+                        productName,
+                        sequence,
+                        forceRefresh: string.Equals(definition.Key, "phone", StringComparison.OrdinalIgnoreCase));
+
+                    productsToAdd.Add(new Product
+                    {
+                        Name = productName,
+                        Description = BuildProductDescription(definition.DisplayName, model, edition, sequence),
+                        PricePerDay = price,
+                        CategoryId = category.Id,
+                        Location = location,
+                        IsAvailable = true,
+                        ImageUrl = imageUrl,
+                        OwnerId = ownerId
+                    });
+                }
+            }
+
+            if (productsToAdd.Any())
+            {
+                context.Products.AddRange(productsToAdd);
+                await context.SaveChangesAsync();
+            }
+
+            await EnsureLocalImagesForExistingProductsAsync(context, categories, webRootPath, categoryDefinitions);
+        }
+
+        private static async Task EnsureLocalImagesForExistingProductsAsync(
+            ApplicationDbContext context,
+            IReadOnlyCollection<Category> categories,
+            string webRootPath,
+            IReadOnlyList<CategorySeedDefinition> definitions)
+        {
+            var categoryById = categories.ToDictionary(c => c.Id, c => c);
+            var fallbackKey = definitions.First().Key;
+            var changed = false;
+            var pendingSaves = 0;
+
+            var products = await context.Products.ToListAsync();
+            for (var i = 0; i < products.Count; i++)
+            {
+                var product = products[i];
+
+                var categoryKey = fallbackKey;
+                if (categoryById.TryGetValue(product.CategoryId, out var cat))
+                {
+                    categoryKey = ResolveCategoryKey(cat.Name, definitions) ?? fallbackKey;
+                }
+
+                var shouldRefresh = ShouldRefreshSeedImage(product.ImageUrl, categoryKey);
+                if (!shouldRefresh &&
+                    !string.IsNullOrWhiteSpace(product.ImageUrl) &&
+                    product.ImageUrl.StartsWith("/images/", StringComparison.OrdinalIgnoreCase) &&
+                    !product.ImageUrl.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) &&
+                    TryResolveLocalImagePath(webRootPath, product.ImageUrl, out _))
+                {
+                    continue;
+                }
+
+                product.ImageUrl = EnsureProductImage(
+                    webRootPath,
+                    categoryKey,
+                    product.Name,
+                    product.Id > 0 ? product.Id : (i + 1),
+                    forceRefresh: shouldRefresh);
+                changed = true;
+                pendingSaves++;
+
+                if (pendingSaves >= 20)
+                {
+                    await context.SaveChangesAsync();
+                    pendingSaves = 0;
+                }
+            }
+
+            if (changed && pendingSaves > 0)
+            {
+                await context.SaveChangesAsync();
+            }
+        }
+
+        private static bool ShouldRefreshSeedImage(string? imageUrl, string? categoryKey)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+            {
+                return true;
+            }
+
+            if (imageUrl.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(categoryKey, "phone", StringComparison.OrdinalIgnoreCase) &&
+                imageUrl.StartsWith("/images/seed-products/phone/", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static Dictionary<string, Category> ResolveCategoryMap(
+            IReadOnlyList<Category> categories,
+            IReadOnlyList<CategorySeedDefinition> definitions)
+        {
+            var result = new Dictionary<string, Category>(StringComparer.OrdinalIgnoreCase);
+            var usedCategoryIds = new HashSet<int>();
+
+            foreach (var definition in definitions)
+            {
+                var category = categories.FirstOrDefault(c =>
+                {
+                    var key = NormalizeText(c.Name);
+                    return key.Contains(definition.MatchKeyword, StringComparison.OrdinalIgnoreCase);
+                });
+
+                if (category != null && usedCategoryIds.Add(category.Id))
+                {
+                    result[definition.Key] = category;
+                }
+            }
+
+            for (var i = 0; i < definitions.Count && i < categories.Count; i++)
+            {
+                var key = definitions[i].Key;
+                if (result.ContainsKey(key))
+                {
+                    continue;
+                }
+
+                var fallback = categories.FirstOrDefault(c => !usedCategoryIds.Contains(c.Id));
+                if (fallback == null)
+                {
+                    continue;
+                }
+
+                usedCategoryIds.Add(fallback.Id);
+                result[key] = fallback;
+            }
+
+            return result;
+        }
+
+        private static string? ResolveCategoryKey(string categoryName, IReadOnlyList<CategorySeedDefinition> definitions)
+        {
+            var normalized = NormalizeText(categoryName);
+            return definitions
+                .FirstOrDefault(d => normalized.Contains(d.MatchKeyword, StringComparison.OrdinalIgnoreCase))
+                ?.Key;
+        }
+
+        private static string NormalizeText(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return string.Empty;
+            }
+
+            var normalized = input.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder(normalized.Length);
+
+            foreach (var c in normalized)
+            {
+                var category = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (category != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(c == 'đ' ? 'd' : c);
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        private static string EnsureUniqueName(string baseName, ISet<string> existingNames)
+        {
+            if (!existingNames.Contains(baseName))
+            {
+                existingNames.Add(baseName);
+                return baseName;
+            }
+
+            var counter = 2;
+            var candidate = $"{baseName} - {counter}";
+            while (existingNames.Contains(candidate))
+            {
+                counter++;
+                candidate = $"{baseName} - {counter}";
+            }
+
+            existingNames.Add(candidate);
+            return candidate;
+        }
+
+        private static string BuildProductDescription(string categoryDisplayName, string model, string edition, int sequence)
+        {
+            return $"{model} phiên bản {edition}, thuộc nhóm {categoryDisplayName}. " +
+                   $"Thiết bị hoạt động ổn định, đã kiểm tra kỹ trước khi cho thuê. " +
+                   $"Mã mẫu #{sequence:00}, phù hợp cho công việc và nhu cầu thực tế.";
+        }
+
+        private static string EnsureProductImage(
+            string webRootPath,
+            string categoryKey,
+            string productName,
+            int sequence,
+            bool forceRefresh = false)
+        {
+            var safeKey = Slugify(categoryKey);
+            var safeName = Slugify(productName);
+            var relativeFolder = Path.Combine("images", "seed-products", safeKey);
+            var absoluteFolder = Path.Combine(webRootPath, relativeFolder);
+            Directory.CreateDirectory(absoluteFolder);
+
+            var fileBaseName = $"{sequence:00}-{safeName}";
+            var absolutePath = Path.Combine(absoluteFolder, $"{fileBaseName}.jpg");
+            if (forceRefresh)
+            {
+                DeleteExistingSeedImageFiles(absoluteFolder, fileBaseName);
+            }
+
+            if (!forceRefresh && TryGetExistingSeedImageFile(absoluteFolder, fileBaseName, out var existingFileName))
+            {
+                return $"/images/seed-products/{safeKey}/{existingFileName}".Replace("\\", "/");
+            }
+
+            if (!File.Exists(absolutePath))
+            {
+                if (!TryDownloadProductSpecificPhoto(categoryKey, productName, absoluteFolder, fileBaseName, out var downloadedFileName) &&
+                    !TryDownloadStockPhoto(categoryKey, sequence, absoluteFolder, fileBaseName, out downloadedFileName))
+                {
+                    if (!TryCopyFallbackPhoto(webRootPath, absolutePath))
+                    {
+                        var fallbackSvg = Path.Combine(absoluteFolder, $"{fileBaseName}.svg");
+                        var svg = BuildProductSvg(categoryKey, productName);
+                        File.WriteAllText(fallbackSvg, svg, new UTF8Encoding(false));
+                        return $"/images/seed-products/{safeKey}/{fileBaseName}.svg";
+                    }
+                }
+                else
+                {
+                    return $"/images/seed-products/{safeKey}/{downloadedFileName}".Replace("\\", "/");
+                }
+            }
+
+            var webPath = $"/images/seed-products/{safeKey}/{fileBaseName}.jpg";
+            return webPath.Replace("\\", "/");
+        }
+
+        private static bool TryDownloadProductSpecificPhoto(
+            string categoryKey,
+            string productName,
+            string destinationFolder,
+            string fileBaseName,
+            out string savedFileName)
+        {
+            savedFileName = string.Empty;
+            var searchName = BuildProductImageSearchName(productName);
+
+            if (string.Equals(categoryKey, "phone", StringComparison.OrdinalIgnoreCase) &&
+                TryDownloadFromGsmArena(searchName, destinationFolder, fileBaseName, out savedFileName))
+            {
+                return true;
+            }
+
+            var primaryQuery = $"{searchName} {GetCategorySearchTags(categoryKey)}";
+            return TryDownloadFromBingImageSearch(primaryQuery, destinationFolder, fileBaseName, out savedFileName) ||
+                   TryDownloadFromBingImageSearch(searchName, destinationFolder, fileBaseName, out savedFileName);
+        }
+
+        private static bool TryDownloadStockPhoto(
+            string categoryKey,
+            int sequence,
+            string destinationFolder,
+            string fileBaseName,
+            out string savedFileName)
+        {
+            savedFileName = string.Empty;
+            var lockId = Math.Abs(sequence) + 1000;
+            var urlCandidates = new[]
+            {
+                $"https://picsum.photos/seed/{Slugify(categoryKey)}-{lockId}/1200/800.jpg"
+            };
+
+            foreach (var url in urlCandidates)
+            {
+                if (TryDownloadImageFromUrl(url, destinationFolder, fileBaseName, out savedFileName))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryDownloadFromGsmArena(
+            string productName,
+            string destinationFolder,
+            string fileBaseName,
+            out string savedFileName)
+        {
+            savedFileName = string.Empty;
+            try
+            {
+                var searchUrl = $"https://www.gsmarena.com/res.php3?sSearch={Uri.EscapeDataString(productName)}";
+                var html = SeedImageHttpClient.GetStringAsync(searchUrl).GetAwaiter().GetResult();
+                var makersIndex = html.IndexOf("class=\"makers\"", StringComparison.OrdinalIgnoreCase);
+                if (makersIndex < 0)
+                {
+                    return false;
+                }
+
+                var scanArea = html.Substring(makersIndex, Math.Min(80_000, html.Length - makersIndex));
+                var match = Regex.Match(scanArea, "<img\\s+src=\"(?<url>[^\"]+)\"", RegexOptions.IgnoreCase);
+                if (!match.Success)
+                {
+                    return false;
+                }
+
+                var imageUrl = match.Groups["url"].Value.Trim();
+                if (string.IsNullOrWhiteSpace(imageUrl))
+                {
+                    return false;
+                }
+
+                if (imageUrl.StartsWith("//", StringComparison.Ordinal))
+                {
+                    imageUrl = "https:" + imageUrl;
+                }
+                else if (imageUrl.StartsWith("/", StringComparison.Ordinal))
+                {
+                    imageUrl = "https://www.gsmarena.com" + imageUrl;
+                }
+
+                return TryDownloadImageFromUrl(imageUrl, destinationFolder, fileBaseName, out savedFileName, minimumBytes: 4_000);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryDownloadFromBingImageSearch(
+            string productName,
+            string destinationFolder,
+            string fileBaseName,
+            out string savedFileName)
+        {
+            savedFileName = string.Empty;
+            try
+            {
+                var query = Uri.EscapeDataString($"{productName} official image");
+                var searchUrl = $"https://www.bing.com/images/search?q={query}";
+                var html = SeedImageHttpClient.GetStringAsync(searchUrl).GetAwaiter().GetResult();
+
+                var matches = Regex.Matches(html, "murl&quot;:&quot;(?<url>[^&]*?)&quot;", RegexOptions.IgnoreCase);
+                foreach (Match match in matches)
+                {
+                    var rawUrl = WebUtility.HtmlDecode(match.Groups["url"].Value);
+                    if (string.IsNullOrWhiteSpace(rawUrl))
+                    {
+                        continue;
+                    }
+
+                    if (!IsSupportedSeedImageUrl(rawUrl))
+                    {
+                        continue;
+                    }
+
+                    if (TryDownloadImageFromUrl(rawUrl, destinationFolder, fileBaseName, out savedFileName, minimumBytes: 4_000))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore and fallback to other providers
+            }
+
+            return false;
+        }
+
+        private static bool IsSupportedSeedImageUrl(string rawUrl)
+        {
+            if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
+            {
+                return false;
+            }
+
+            if (!uri.Scheme.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var ext = Path.GetExtension(uri.AbsolutePath);
+            if (string.IsNullOrWhiteSpace(ext))
+            {
+                return true;
+            }
+
+            return ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                   ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                   ext.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+                   ext.Equals(".webp", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryDownloadImageFromUrl(
+            string url,
+            string destinationFolder,
+            string fileBaseName,
+            out string savedFileName,
+            int minimumBytes = 10_000)
+        {
+            savedFileName = string.Empty;
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.UserAgent.ParseAdd("TechShareSeed/1.0");
+                using var response = SeedImageHttpClient.Send(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+
+                var mediaType = response.Content.Headers.ContentType?.MediaType;
+                if (string.IsNullOrWhiteSpace(mediaType) ||
+                    (!mediaType.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase) &&
+                     !mediaType.Equals("image/jpg", StringComparison.OrdinalIgnoreCase) &&
+                     !mediaType.Equals("image/png", StringComparison.OrdinalIgnoreCase) &&
+                     !mediaType.Equals("image/webp", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return false;
+                }
+
+                var bytes = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
+                if (bytes.Length < minimumBytes)
+                {
+                    return false;
+                }
+
+                if (!IsSupportedImageBytes(bytes))
+                {
+                    return false;
+                }
+
+                var extension = ResolveImageExtension(mediaType, url);
+                DeleteExistingSeedImageFiles(destinationFolder, fileBaseName);
+                var fileName = $"{fileBaseName}{extension}";
+                var destinationPath = Path.Combine(destinationFolder, fileName);
+                File.WriteAllBytes(destinationPath, bytes);
+                savedFileName = fileName;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool IsSupportedImageBytes(byte[] bytes)
+        {
+            if (bytes.Length < 8)
+            {
+                return false;
+            }
+
+            var isJpeg = bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
+            var isPng = bytes[0] == 0x89 &&
+                        bytes[1] == 0x50 &&
+                        bytes[2] == 0x4E &&
+                        bytes[3] == 0x47 &&
+                        bytes[4] == 0x0D &&
+                        bytes[5] == 0x0A &&
+                        bytes[6] == 0x1A &&
+                        bytes[7] == 0x0A;
+            var isWebp = bytes.Length >= 12 &&
+                         bytes[0] == 0x52 &&
+                         bytes[1] == 0x49 &&
+                         bytes[2] == 0x46 &&
+                         bytes[3] == 0x46 &&
+                         bytes[8] == 0x57 &&
+                         bytes[9] == 0x45 &&
+                         bytes[10] == 0x42 &&
+                         bytes[11] == 0x50;
+
+            return isJpeg || isPng || isWebp;
+        }
+
+        private static string BuildProductImageSearchName(string productName)
+        {
+            if (string.IsNullOrWhiteSpace(productName))
+            {
+                return string.Empty;
+            }
+
+            var cleaned = productName;
+            var removeTokens = new[]
+            {
+                "Creator Pack", "Business Pack", "Film Kit", "Travel Kit",
+                "Studio Pack", "Live Pack", "Esports Pack", "Home Pack",
+                "Cinema Pack", "Presentation Pack", "Creator Bundle", "Learning Bundle",
+                "Office Kit", "Home Kit", "256GB", "512GB"
+            };
+
+            foreach (var token in removeTokens)
+            {
+                cleaned = cleaned.Replace(token, string.Empty, StringComparison.OrdinalIgnoreCase);
+            }
+
+            cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
+            return cleaned;
+        }
+
+        private static bool TryCopyFallbackPhoto(string webRootPath, string destinationPath)
+        {
+            var fallbackDir = Path.Combine(webRootPath, "images");
+            if (!Directory.Exists(fallbackDir))
+            {
+                return false;
+            }
+
+            var fallbackFiles = Directory.GetFiles(fallbackDir)
+                .Where(path =>
+                {
+                    var ext = Path.GetExtension(path);
+                    return ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                           ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
+                })
+                .ToList();
+
+            if (!fallbackFiles.Any())
+            {
+                return false;
+            }
+
+            var hash = StableHash(destinationPath);
+            var selected = fallbackFiles[hash % fallbackFiles.Count];
+            File.Copy(selected, destinationPath, overwrite: true);
+            return true;
+        }
+
+        private static string GetCategorySearchTags(string categoryKey)
+        {
+            return categoryKey.ToLowerInvariant() switch
+            {
+                "laptop" => "laptop,computer",
+                "camera" => "camera,photography",
+                "audio" => "headphones,speaker",
+                "gaming" => "gaming,console",
+                "projector" => "projector,screen",
+                "tablet" => "tablet,ipad",
+                "phone" => "smartphone,mobile",
+                "network" => "router,wifi",
+                _ => "technology,gadget"
+            };
+        }
+
+        private static bool TryResolveLocalImagePath(string webRootPath, string imageUrl, out string absolutePath)
+        {
+            absolutePath = string.Empty;
+            if (string.IsNullOrWhiteSpace(imageUrl) || !imageUrl.StartsWith("/images/", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var cleanUrl = imageUrl.Split('?', '#')[0];
+            if (string.IsNullOrWhiteSpace(cleanUrl))
+            {
+                return false;
+            }
+
+            var relative = cleanUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var combined = Path.Combine(webRootPath, relative);
+            if (!File.Exists(combined))
+            {
+                return false;
+            }
+
+            absolutePath = combined;
+            return true;
+        }
+
+        private static bool TryGetExistingSeedImageFile(string folder, string fileBaseName, out string fileName)
+        {
+            fileName = string.Empty;
+            foreach (var ext in new[] { ".jpg", ".jpeg", ".png", ".webp" })
+            {
+                var candidate = Path.Combine(folder, $"{fileBaseName}{ext}");
+                if (!File.Exists(candidate))
+                {
+                    continue;
+                }
+
+                fileName = $"{fileBaseName}{ext}";
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void DeleteExistingSeedImageFiles(string folder, string fileBaseName)
+        {
+            foreach (var ext in new[] { ".jpg", ".jpeg", ".png", ".webp", ".svg" })
+            {
+                var path = Path.Combine(folder, $"{fileBaseName}{ext}");
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+        }
+
+        private static string ResolveImageExtension(string mediaType, string url)
+        {
+            if (mediaType.Equals("image/webp", StringComparison.OrdinalIgnoreCase))
+            {
+                return ".webp";
+            }
+
+            if (mediaType.Equals("image/png", StringComparison.OrdinalIgnoreCase))
+            {
+                return ".png";
+            }
+
+            var ext = Path.GetExtension(url.Split('?', '#')[0]);
+            if (ext.Equals(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                return ".png";
+            }
+
+            if (ext.Equals(".webp", StringComparison.OrdinalIgnoreCase))
+            {
+                return ".webp";
+            }
+
+            return ".jpg";
+        }
+
+        private static string BuildProductSvg(string categoryKey, string productName)
+        {
+            var colors = GetGradientFromText(productName + categoryKey);
+            var title = EscapeXml(productName);
+            var subtitle = EscapeXml(categoryKey.ToUpperInvariant());
+
+            return $"""
+                <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+                  <defs>
+                    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="{colors.Start}" />
+                      <stop offset="100%" stop-color="{colors.End}" />
+                    </linearGradient>
+                  </defs>
+                  <rect width="1200" height="800" fill="url(#g)" />
+                  <rect x="52" y="52" width="1096" height="696" rx="24" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.35)" />
+                  <text x="90" y="170" font-size="38" font-family="Segoe UI, Arial, sans-serif" fill="#ffffff" font-weight="700">{subtitle}</text>
+                  <text x="90" y="250" font-size="54" font-family="Segoe UI, Arial, sans-serif" fill="#ffffff" font-weight="800">{title}</text>
+                  <text x="90" y="320" font-size="30" font-family="Segoe UI, Arial, sans-serif" fill="#f8f9fa">TechShare Seed Product</text>
+                </svg>
+                """;
+        }
+
+        private static (string Start, string End) GetGradientFromText(string input)
+        {
+            var palette = new (string Start, string End)[]
+            {
+                ("#3b82f6", "#1d4ed8"),
+                ("#22c55e", "#15803d"),
+                ("#a855f7", "#6b21a8"),
+                ("#f97316", "#c2410c"),
+                ("#14b8a6", "#0f766e"),
+                ("#ec4899", "#be185d"),
+                ("#64748b", "#334155"),
+                ("#0ea5e9", "#0369a1"),
+            };
+
+            var hash = StableHash(input);
+            return palette[hash % palette.Length];
+        }
+
+        private static int StableHash(string input)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+            var value = BitConverter.ToInt32(bytes, 0);
+            return value == int.MinValue ? 0 : Math.Abs(value);
+        }
+
+        private static string EscapeXml(string value)
+        {
+            return value
+                .Replace("&", "&amp;", StringComparison.Ordinal)
+                .Replace("<", "&lt;", StringComparison.Ordinal)
+                .Replace(">", "&gt;", StringComparison.Ordinal)
+                .Replace("\"", "&quot;", StringComparison.Ordinal)
+                .Replace("'", "&apos;", StringComparison.Ordinal);
+        }
+
+        private static string Slugify(string input)
+        {
+            var normalized = NormalizeText(input);
+            var sb = new StringBuilder(normalized.Length);
+
+            foreach (var c in normalized)
+            {
+                if (char.IsLetterOrDigit(c))
+                {
+                    sb.Append(c);
+                }
+                else if (sb.Length > 0 && sb[^1] != '-')
+                {
+                    sb.Append('-');
+                }
+            }
+
+            var slug = sb.ToString().Trim('-');
+            if (slug.Length > 48)
+            {
+                slug = slug[..48].Trim('-');
+            }
+
+            return string.IsNullOrWhiteSpace(slug) ? "item" : slug;
+        }
+
+        private static List<CategorySeedDefinition> GetCategoryDefinitions()
+        {
+            return new List<CategorySeedDefinition>
+            {
+                new(
+                    Key: "laptop",
+                    DisplayName: "Laptop & May tinh",
+                    MatchKeyword: "laptop",
+                    BasePrice: 220_000,
+                    PriceStep: 30_000,
+                    Locations: new[] { "Ha Noi - Cau Giay", "TP. HCM - Quan 1", "Da Nang - Hai Chau", "Ha Noi - Nam Tu Liem" },
+                    Models: new[] { "MacBook Pro 14", "MacBook Air 15", "Dell XPS 13", "Dell XPS 15", "ThinkPad X1 Carbon", "ASUS Zenbook 14", "HP Spectre x360", "MSI Prestige 16", "Acer Swift Edge", "Surface Laptop 6" },
+                    Editions: new[] { "Creator Pack", "Business Pack" }),
+
+                new(
+                    Key: "camera",
+                    DisplayName: "May anh & Quay phim",
+                    MatchKeyword: "may anh",
+                    BasePrice: 240_000,
+                    PriceStep: 35_000,
+                    Locations: new[] { "Ha Noi - Hoan Kiem", "TP. HCM - Quan 3", "Da Nang - Son Tra", "Nha Trang - Tran Phu" },
+                    Models: new[] { "Sony A7 IV", "Sony FX30", "Canon R6 Mark II", "Canon R8", "Fujifilm X-T5", "Nikon Z6 II", "Panasonic S5 II", "DJI Pocket 3", "GoPro Hero 12", "DJI Mavic 3" },
+                    Editions: new[] { "Film Kit", "Travel Kit" }),
+
+                new(
+                    Key: "audio",
+                    DisplayName: "Am thanh & Loa",
+                    MatchKeyword: "am thanh",
+                    BasePrice: 120_000,
+                    PriceStep: 20_000,
+                    Locations: new[] { "Ha Noi - Dong Da", "TP. HCM - Binh Thanh", "Da Nang - Thanh Khe", "Ha Noi - Cau Giay" },
+                    Models: new[] { "JBL PartyBox 310", "Bose QC Ultra", "Sony WH-1000XM5", "Marshall Stanmore III", "Yamaha HS8 Pair", "Shure SM7B Set", "Rode NT1 Kit", "Audio Technica M50x", "Sennheiser EW-D", "Focusrite Scarlett 2i2" },
+                    Editions: new[] { "Studio Pack", "Live Pack" }),
+
+                new(
+                    Key: "gaming",
+                    DisplayName: "Console & Gaming",
+                    MatchKeyword: "console",
+                    BasePrice: 140_000,
+                    PriceStep: 25_000,
+                    Locations: new[] { "Ha Noi - Cau Giay", "TP. HCM - Quan 10", "Da Nang - Hai Chau", "Ha Noi - Hoang Mai" },
+                    Models: new[] { "PlayStation 5 Slim", "Xbox Series X", "Nintendo Switch OLED", "Steam Deck OLED", "ROG Ally X", "Logitech G Pro Rig", "Thrustmaster T300 RS", "Meta Quest 3", "Razer Blade 16", "Corsair Gaming Set" },
+                    Editions: new[] { "Esports Pack", "Home Pack" }),
+
+                new(
+                    Key: "projector",
+                    DisplayName: "May chieu & Man hinh",
+                    MatchKeyword: "may chieu",
+                    BasePrice: 200_000,
+                    PriceStep: 30_000,
+                    Locations: new[] { "Ha Noi - Hai Ba Trung", "TP. HCM - Quan 2", "Da Nang - Ngu Hanh Son", "Ha Noi - Tay Ho" },
+                    Models: new[] { "BenQ TK850i", "Epson EF-21", "XGIMI Horizon", "Anker Nebula Cosmos", "ViewSonic PX748", "LG CineBeam Q", "Samsung Freestyle", "Hisense C1 Laser", "Optoma UHD38", "ASUS ZenBeam L2" },
+                    Editions: new[] { "Cinema Pack", "Presentation Pack" }),
+
+                new(
+                    Key: "tablet",
+                    DisplayName: "Tablet & iPad",
+                    MatchKeyword: "tablet",
+                    BasePrice: 150_000,
+                    PriceStep: 22_000,
+                    Locations: new[] { "Da Nang - Thanh Khe", "TP. HCM - Quan 7", "Ha Noi - Hoang Mai", "Ha Noi - Cau Giay" },
+                    Models: new[] { "iPad Pro 13 M4", "iPad Air M2", "Galaxy Tab S9 Ultra", "Xiaomi Pad 6S Pro", "Lenovo Tab P12 Pro", "Huawei MatePad Pro", "Surface Pro 10", "iPad Mini 7", "Galaxy Tab S9 FE", "Honor Pad V9" },
+                    Editions: new[] { "Creator Bundle", "Learning Bundle" }),
+
+                new(
+                    Key: "phone",
+                    DisplayName: "Dien thoai",
+                    MatchKeyword: "dien thoai",
+                    BasePrice: 110_000,
+                    PriceStep: 18_000,
+                    Locations: new[] { "Ha Noi - Nam Tu Liem", "TP. HCM - Go Vap", "Da Nang - Hai Chau", "Ha Noi - Dong Da" },
+                    Models: new[] { "iPhone 16 Pro Max", "Galaxy S24 Ultra", "Pixel 9 Pro", "Xiaomi 15 Ultra", "OnePlus 13", "Vivo X200 Pro", "OPPO Find X8", "Honor Magic 7", "ASUS ROG Phone 9", "Sony Xperia 1 VI" },
+                    Editions: new[] { "256GB", "512GB" }),
+
+                new(
+                    Key: "network",
+                    DisplayName: "Thiet bi mang",
+                    MatchKeyword: "thiet bi mang",
+                    BasePrice: 90_000,
+                    PriceStep: 16_000,
+                    Locations: new[] { "Ha Noi - Cau Giay", "TP. HCM - Quan 7", "Da Nang - Ngu Hanh Son", "Thu Duc" },
+                    Models: new[] { "TP-Link Deco XE75", "ASUS ZenWiFi XT9", "Netgear Orbi RBK763", "UniFi Dream Router", "MikroTik hAP ax3", "Huawei 5G CPE Pro", "Starlink Standard Kit", "TP-Link Archer AXE75", "Linksys Atlas Pro", "Ubiquiti U7 Pro" },
+                    Editions: new[] { "Office Kit", "Home Kit" }),
+            };
+        }
+
+        private sealed record CategorySeedDefinition(
+            string Key,
+            string DisplayName,
+            string MatchKeyword,
+            decimal BasePrice,
+            decimal PriceStep,
+            string[] Locations,
+            string[] Models,
+            string[] Editions);
     }
 }

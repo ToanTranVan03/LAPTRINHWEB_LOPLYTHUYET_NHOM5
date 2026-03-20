@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -180,6 +181,66 @@ public class HomeController : Controller
         return View();
     }
 
+    [Authorize]
+    public async Task<IActionResult> Profile()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Challenge();
+        }
+
+        return View(BuildUserProfileViewModel(user));
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Profile(UserProfileViewModel model)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Challenge();
+        }
+
+        if (string.IsNullOrWhiteSpace(model.FullName))
+        {
+            ModelState.AddModelError(nameof(model.FullName), "Vui lòng nhập họ và tên.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var invalidViewModel = BuildUserProfileViewModel(user);
+            invalidViewModel.FullName = model.FullName;
+            invalidViewModel.PhoneNumber = model.PhoneNumber;
+            invalidViewModel.Address = model.Address;
+            return View(invalidViewModel);
+        }
+
+        user.FullName = model.FullName.Trim();
+        user.PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber) ? null : model.PhoneNumber.Trim();
+        user.Address = string.IsNullOrWhiteSpace(model.Address) ? null : model.Address.Trim();
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            foreach (var error in updateResult.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            var failedViewModel = BuildUserProfileViewModel(user);
+            failedViewModel.FullName = model.FullName;
+            failedViewModel.PhoneNumber = model.PhoneNumber;
+            failedViewModel.Address = model.Address;
+            return View(failedViewModel);
+        }
+
+        TempData["Message"] = "Đã lưu thông tin cá nhân.";
+        return RedirectToAction(nameof(Profile));
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
@@ -213,5 +274,36 @@ public class HomeController : Controller
         
         // Trả về trang cũ
         return Redirect(Request.Headers["Referer"].ToString() ?? "/");
+    }
+
+    private UserProfileViewModel BuildUserProfileViewModel(ApplicationUser user)
+    {
+        double? currentLatitude = null;
+        double? currentLongitude = null;
+        if (Request.Cookies.TryGetValue("user_lat", out var latStr) &&
+            Request.Cookies.TryGetValue("user_lng", out var lngStr) &&
+            double.TryParse(latStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var lat) &&
+            double.TryParse(lngStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var lng))
+        {
+            currentLatitude = lat;
+            currentLongitude = lng;
+        }
+
+        var displayName = string.IsNullOrWhiteSpace(user.FullName)
+            ? user.UserName ?? user.Email ?? "User"
+            : user.FullName;
+
+        return new UserProfileViewModel
+        {
+            FullName = displayName,
+            UserNameOrEmail = user.UserName ?? user.Email ?? "N/A",
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            Address = user.Address,
+            IsVerified = user.IsVerified,
+            AvatarUrl = $"/avatars/{user.Id}.jpg?v={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}",
+            CurrentLatitude = currentLatitude,
+            CurrentLongitude = currentLongitude
+        };
     }
 }

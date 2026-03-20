@@ -14,6 +14,7 @@ namespace TechShare.Controllers
     public class ProductsController : Controller
     {
         private const int PageSize = 9;
+        private const double NearbyRadiusKm = 50d;
         private static readonly HttpClient GeoHttpClient = BuildGeoHttpClient();
         private readonly ApplicationDbContext _context;
 
@@ -30,7 +31,12 @@ namespace TechShare.Controllers
                 page = 1;
             }
 
-            var productsQuery = BuildCatalogQuery(searchString, categoryId, sortOrder);
+            var hasUserCoordinates = TryReadUserCoordinatesFromCookies(out var parsedLat, out var parsedLng);
+            double? userLat = hasUserCoordinates ? parsedLat : null;
+            double? userLng = hasUserCoordinates ? parsedLng : null;
+            var missingNearbyLocation = string.Equals(sortOrder, "nearby", StringComparison.OrdinalIgnoreCase) && !hasUserCoordinates;
+
+            var productsQuery = BuildCatalogQuery(searchString, categoryId, sortOrder, userLat, userLng);
             var totalItems = await productsQuery.CountAsync();
             var totalPages = totalItems == 0 ? 1 : (int)Math.Ceiling(totalItems / (double)PageSize);
 
@@ -39,18 +45,15 @@ namespace TechShare.Controllers
                     .Take(PageSize)
                     .ToListAsync();
 
-            // Tính khoảng cách nếu có cookie
-            if (Request.Cookies.TryGetValue("user_lat", out var latStr) &&
-                Request.Cookies.TryGetValue("user_lng", out var lngStr) &&
-                double.TryParse(latStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var userLat) &&
-                double.TryParse(lngStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var userLng))
+            // TÃƒÂ­nh khoÃ¡ÂºÂ£ng cÃƒÂ¡ch nÃ¡ÂºÂ¿u cÃƒÂ³ cookie
+            if (userLat.HasValue && userLng.HasValue)
             {
                 foreach (var product in productsList)
                 {
                     if (product.Latitude.HasValue && product.Longitude.HasValue)
                     {
-                        var distanceRaw = Math.Sqrt(Math.Pow(product.Latitude.Value - userLat, 2) + Math.Pow(product.Longitude.Value - userLng, 2));
-                        product.DistanceKm = Math.Round(distanceRaw * 111.32, 1);
+                        var distanceKm = CalculateApproxDistanceKm(product.Latitude.Value, product.Longitude.Value, userLat.Value, userLng.Value);
+                        product.DistanceKm = Math.Round(distanceKm, 1);
                     }
                 }
             }
@@ -69,6 +72,8 @@ namespace TechShare.Controllers
                 SearchString = searchString,
                 CategoryId = categoryId,
                 SortOrder = sortOrder,
+                MissingNearbyLocation = missingNearbyLocation,
+                NearbyRadiusKm = NearbyRadiusKm,
                 CurrentPage = page,
                 TotalPages = totalPages,
                 TotalItems = totalItems
@@ -106,41 +111,47 @@ namespace TechShare.Controllers
         [HttpGet("api/products/suggest-nearby")]
         public async Task<IActionResult> SuggestNearby(double lat, double lng)
         {
-            // Lấy các sản phẩm có tọa độ
-            var products = await _context.Products
-                .Where(p => p.Latitude.HasValue && p.Longitude.HasValue && p.IsAvailable)
-                .ToListAsync();
+            if (!IsValidCoordinatePair(lat, lng))
+            {
+                return BadRequest(new { message = "Toa do vi tri khong hop le." });
+            }
 
-            if (!products.Any()) return Json(new List<object>());
+            var kmPerLat = 111.32d;
+            var kmPerLng = 111.32d * Math.Cos(lat * Math.PI / 180d);
+            var radiusKmSquared = NearbyRadiusKm * NearbyRadiusKm;
 
-            // Tính khoảng cách (Euclidean cơ bản trên map cho mục đích demo)
-            var nearby = products
+            var nearby = await _context.Products
+                .Where(p => p.IsAvailable && p.Latitude.HasValue && p.Longitude.HasValue)
                 .Select(p => new
                 {
-                    id = p.Id,
-                    name = p.Name,
-                    price = p.PricePerDay,
-                    image = p.ImageUrl,
-                    location = p.Location,
-                    distanceRaw = Math.Sqrt(Math.Pow(p.Latitude!.Value - lat, 2) + Math.Pow(p.Longitude!.Value - lng, 2))
+                    p.Id,
+                    p.Name,
+                    p.PricePerDay,
+                    p.ImageUrl,
+                    p.Location,
+                    DistanceSquared =
+                        ((p.Latitude!.Value - lat) * kmPerLat) * ((p.Latitude!.Value - lat) * kmPerLat) +
+                        ((p.Longitude!.Value - lng) * kmPerLng) * ((p.Longitude!.Value - lng) * kmPerLng)
                 })
-                .OrderBy(p => p.distanceRaw) // Gần nhất
+                .Where(p => p.DistanceSquared <= radiusKmSquared)
+                .OrderBy(p => p.DistanceSquared)
                 .Take(4)
-                .Select(p => new 
-                {
-                    id = p.id,
-                    name = p.name,
-                    price = p.price,
-                    image = p.image,
-                    location = p.location,
-                    distanceKm = Math.Round(p.distanceRaw * 111.32, 1) // Convert tọa độ độ sang Km cơ bản
-                })
-                .ToList();
+                .ToListAsync();
 
-            return Json(nearby);
+            var result = nearby.Select(p => new
+            {
+                id = p.Id,
+                name = p.Name,
+                price = p.PricePerDay,
+                image = p.ImageUrl,
+                location = p.Location,
+                distanceKm = Math.Round(Math.Sqrt(p.DistanceSquared), 1)
+            });
+
+            return Json(result);
         }
 
-        // Dành cho Admin quản lý TOÀN BỘ sản phẩm
+        // DÃƒÂ nh cho Admin quÃ¡ÂºÂ£n lÃƒÂ½ TOÃƒâ‚¬N BÃ¡Â»Ëœ sÃ¡ÂºÂ£n phÃ¡ÂºÂ©m
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Manage()
         {
@@ -153,7 +164,7 @@ namespace TechShare.Controllers
             return View(products);
         }
 
-        // Trang quản lý sản phẩm cho thuê của cá nhân (USER)
+        // Trang quÃ¡ÂºÂ£n lÃƒÂ½ sÃ¡ÂºÂ£n phÃ¡ÂºÂ©m cho thuÃƒÂª cÃ¡Â»Â§a cÃƒÂ¡ nhÃƒÂ¢n (USER)
         [Authorize]
         public async Task<IActionResult> MyProducts()
         {
@@ -181,23 +192,20 @@ namespace TechShare.Controllers
 
             if (product == null) return NotFound();
 
-            // Tính khoảng cách nếu có cookie
-            if (Request.Cookies.TryGetValue("user_lat", out var latStr) &&
-                Request.Cookies.TryGetValue("user_lng", out var lngStr) &&
-                double.TryParse(latStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var userLat) &&
-                double.TryParse(lngStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var userLng))
+            // TÃƒÂ­nh khoÃ¡ÂºÂ£ng cÃƒÂ¡ch nÃ¡ÂºÂ¿u cÃƒÂ³ cookie
+            if (TryReadUserCoordinatesFromCookies(out var userLat, out var userLng))
             {
                 if (product.Latitude.HasValue && product.Longitude.HasValue)
                 {
-                    var distanceRaw = Math.Sqrt(Math.Pow(product.Latitude.Value - userLat, 2) + Math.Pow(product.Longitude.Value - userLng, 2));
-                    product.DistanceKm = Math.Round(distanceRaw * 111.32, 1);
+                    var distanceKm = CalculateApproxDistanceKm(product.Latitude.Value, product.Longitude.Value, userLat, userLng);
+                    product.DistanceKm = Math.Round(distanceKm, 1);
                 }
             }
 
             return View(product);
         }
 
-        [Authorize] // Cả User và Admin đều có thể thêm
+        [Authorize] // CÃ¡ÂºÂ£ User vÃƒÂ  Admin Ã„â€˜Ã¡Â»Âu cÃƒÂ³ thÃ¡Â»Æ’ thÃƒÂªm
         public IActionResult Create()
         {
             ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name");
@@ -209,6 +217,8 @@ namespace TechShare.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Name,Description,PricePerDay,Location,Latitude,Longitude,IsAvailable,CategoryId")] Product product, IFormFile imageFile)
         {
+            ApplyInvariantCoordinates(product);
+
             if (imageFile != null && imageFile.Length > 0)
             {
                 var fileName = DateTime.Now.Ticks + Path.GetExtension(imageFile.FileName);
@@ -234,8 +244,8 @@ namespace TechShare.Controllers
             {
                 _context.Add(product);
                 await _context.SaveChangesAsync();
-                
-                TempData["Message"] = "Đã đăng sản phẩm cho thuê thành công!";
+                TempData["Message"] = "Da dang san pham cho thue thanh cong!";
+
                 if (User.IsInRole("Admin")) return RedirectToAction(nameof(Manage));
                 return RedirectToAction(nameof(MyProducts));
             }
@@ -244,7 +254,7 @@ namespace TechShare.Controllers
             return View(product);
         }
 
-        [Authorize] // Edit cho người dùng (chỉ sửa của mình) hoặc Admin (sửa tất cả)
+        [Authorize] // Edit cho ngÃ†Â°Ã¡Â»Âi dÃƒÂ¹ng (chÃ¡Â»â€° sÃ¡Â»Â­a cÃ¡Â»Â§a mÃƒÂ¬nh) hoÃ¡ÂºÂ·c Admin (sÃ¡Â»Â­a tÃ¡ÂºÂ¥t cÃ¡ÂºÂ£)
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -255,7 +265,7 @@ namespace TechShare.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var isAdmin = User.IsInRole("Admin");
 
-            if (!isAdmin && product.OwnerId != userId) return Forbid(); // Không cho sửa bài người khác
+            if (!isAdmin && product.OwnerId != userId) return Forbid(); // KhÃƒÂ´ng cho sÃ¡Â»Â­a bÃƒÂ i ngÃ†Â°Ã¡Â»Âi khÃƒÂ¡c
 
             ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", product.CategoryId);
             return View(product);
@@ -271,12 +281,14 @@ namespace TechShare.Controllers
             var existingProduct = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
             if (existingProduct == null) return NotFound();
 
+            ApplyInvariantCoordinates(product);
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var isAdmin = User.IsInRole("Admin");
 
             if (!isAdmin && existingProduct.OwnerId != userId) return Forbid();
 
-            // Đảm bảo không đổi OwnerId của người khác
+            // Ã„ÂÃ¡ÂºÂ£m bÃ¡ÂºÂ£o khÃƒÂ´ng Ã„â€˜Ã¡Â»â€¢i OwnerId cÃ¡Â»Â§a ngÃ†Â°Ã¡Â»Âi khÃƒÂ¡c
             if (!isAdmin) product.OwnerId = existingProduct.OwnerId;
 
             if (imageFile != null && imageFile.Length > 0)
@@ -290,7 +302,7 @@ namespace TechShare.Controllers
             }
             else
             {
-                product.ImageUrl = existingProduct.ImageUrl; // Giữ nguyên ảnh cũ nếu ko up ảnh mới
+                product.ImageUrl = existingProduct.ImageUrl; // GiÃ¡Â»Â¯ nguyÃƒÂªn Ã¡ÂºÂ£nh cÃ…Â© nÃ¡ÂºÂ¿u ko up Ã¡ÂºÂ£nh mÃ¡Â»â€ºi
             }
 
             ModelState.Remove("imageFile");
@@ -301,8 +313,8 @@ namespace TechShare.Controllers
             {
                 _context.Update(product);
                 await _context.SaveChangesAsync();
-                
-                TempData["Message"] = "Đã cập nhật sản phẩm thành công!";
+                TempData["Message"] = "Da cap nhat san pham thanh cong!";
+
                 if (isAdmin) return RedirectToAction(nameof(Manage));
                 return RedirectToAction(nameof(MyProducts));
             }
@@ -380,7 +392,8 @@ namespace TechShare.Controllers
                 
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
-                TempData["Message"] = "Đã xóa sản phẩm thành công.";
+                TempData["Message"] = "Da xoa san pham thanh cong.";
+
             }
 
             if (isAdmin) return RedirectToAction(nameof(Manage));
@@ -392,7 +405,7 @@ namespace TechShare.Controllers
             return _context.Products.Any(e => e.Id == id);
         }
 
-        private IQueryable<Product> BuildCatalogQuery(string? searchString, int? categoryId, string? sortOrder)
+        private IQueryable<Product> BuildCatalogQuery(string? searchString, int? categoryId, string? sortOrder, double? userLat, double? userLng)
         {
             var products = _context.Products
                 .Include(p => p.Category)
@@ -409,6 +422,34 @@ namespace TechShare.Controllers
             if (categoryId.HasValue)
             {
                 products = products.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            if (sortOrder == "nearby")
+            {
+                if (!userLat.HasValue || !userLng.HasValue)
+                {
+                    return products.Where(_ => false).OrderByDescending(p => p.Id);
+                }
+
+                var lat = userLat.Value;
+                var lng = userLng.Value;
+                var kmPerLat = 111.32d;
+                var kmPerLng = 111.32d * Math.Cos(lat * Math.PI / 180d);
+                var radiusKmSquared = NearbyRadiusKm * NearbyRadiusKm;
+
+                return products
+                    .Where(p => p.Latitude.HasValue && p.Longitude.HasValue)
+                    .Where(p =>
+                        p.Latitude.HasValue &&
+                        p.Longitude.HasValue &&
+                        (((p.Latitude.Value - lat) * kmPerLat) * ((p.Latitude.Value - lat) * kmPerLat) +
+                         ((p.Longitude.Value - lng) * kmPerLng) * ((p.Longitude.Value - lng) * kmPerLng)) <= radiusKmSquared)
+                    .OrderBy(p =>
+                        p.Latitude.HasValue && p.Longitude.HasValue
+                            ? ((p.Latitude.Value - lat) * kmPerLat) * ((p.Latitude.Value - lat) * kmPerLat) +
+                              ((p.Longitude.Value - lng) * kmPerLng) * ((p.Longitude.Value - lng) * kmPerLng)
+                            : radiusKmSquared)
+                    .ThenByDescending(p => p.Id);
             }
 
             return sortOrder switch
@@ -488,6 +529,65 @@ namespace TechShare.Controllers
             }
 
             return false;
+        }
+
+        private bool TryReadUserCoordinatesFromCookies(out double lat, out double lng)
+        {
+            lat = 0;
+            lng = 0;
+
+            if (!Request.Cookies.TryGetValue("user_lat", out var latRaw) ||
+                !Request.Cookies.TryGetValue("user_lng", out var lngRaw))
+            {
+                return false;
+            }
+
+            if (!TryParseCoordinate(latRaw, out lat) || !TryParseCoordinate(lngRaw, out lng))
+            {
+                return false;
+            }
+
+            return IsValidCoordinatePair(lat, lng);
+        }
+
+        private void ApplyInvariantCoordinates(Product product)
+        {
+            var latRaw = Request.Form["Latitude"].FirstOrDefault();
+            var lngRaw = Request.Form["Longitude"].FirstOrDefault();
+
+            if (TryParseCoordinate(latRaw, out var lat) && lat >= -90 && lat <= 90)
+            {
+                product.Latitude = lat;
+            }
+
+            if (TryParseCoordinate(lngRaw, out var lng) && lng >= -180 && lng <= 180)
+            {
+                product.Longitude = lng;
+            }
+        }
+
+        private static bool TryParseCoordinate(string? raw, out double value)
+        {
+            value = 0;
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return false;
+            }
+
+            return double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+                   double.TryParse(raw, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+        }
+
+        private static bool IsValidCoordinatePair(double lat, double lng)
+        {
+            return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+        }
+
+        private static double CalculateApproxDistanceKm(double fromLat, double fromLng, double toLat, double toLng)
+        {
+            var deltaLatKm = (fromLat - toLat) * 111.32d;
+            var deltaLngKm = (fromLng - toLng) * (111.32d * Math.Cos(toLat * Math.PI / 180d));
+            return Math.Sqrt(deltaLatKm * deltaLatKm + deltaLngKm * deltaLngKm);
         }
 
         private static string? TryReadString(JsonElement root, string propertyName)

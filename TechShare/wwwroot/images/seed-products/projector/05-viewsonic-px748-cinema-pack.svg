@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#14b8a6" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#g)" />
+  <rect x="52" y="52" width="1096" height="696" rx="24" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.35)" />
+  <text x="90" y="170" font-size="38" font-family="Segoe UI, Arial, sans-serif" fill="#ffffff" font-weight="700">PROJECTOR</text>
+  <text x="90" y="250" font-size="54" font-family="Segoe UI, Arial, sans-serif" fill="#ffffff" font-weight="800">ViewSonic PX748 Cinema Pack</text>
+  <text x="90" y="320" font-size="30" font-family="Segoe UI, Arial, sans-serif" fill="#f8f9fa">TechShare Seed Product</text>
+</svg>

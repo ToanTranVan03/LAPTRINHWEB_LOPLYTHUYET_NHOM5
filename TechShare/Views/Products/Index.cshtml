@@ -44,6 +44,10 @@
         <div class="sort-pills d-flex gap-1 flex-wrap">
             <a href="@Url.Action("Index", new { searchString = Model.SearchString, categoryId = Model.CategoryId, sortOrder = "newest", page = 1 })"
                class="btn btn-sm @(currentSort == "newest" || currentSort == null ? "active" : "")">Mới nhất</a>
+            <a href="#"
+               id="nearby-sort-btn"
+               data-nearby-url="@Url.Action("Index", new { searchString = Model.SearchString, categoryId = Model.CategoryId, sortOrder = "nearby", page = 1 })"
+               class="btn btn-sm @(currentSort == "nearby" ? "active" : "")">Gần đây</a>
             <a href="@Url.Action("Index", new { searchString = Model.SearchString, categoryId = Model.CategoryId, sortOrder = "price_asc", page = 1 })"
                class="btn btn-sm @(currentSort == "price_asc" ? "active" : "")">Giá tăng</a>
             <a href="@Url.Action("Index", new { searchString = Model.SearchString, categoryId = Model.CategoryId, sortOrder = "price_desc", page = 1 })"
@@ -53,12 +57,28 @@
         </div>
     </div>
 
+    @if (Model.MissingNearbyLocation)
+    {
+        <div class="alert alert-warning border-0 shadow-sm mb-4">
+            <i class="bi bi-geo-alt-fill me-1"></i>
+            Bạn chưa bật vị trí. Hãy bấm <strong>Gần đây</strong> và cho phép định vị để lọc trong phạm vi @Model.NearbyRadiusKm km.
+        </div>
+    }
+
     @if (!Model.Products.Any())
     {
         <div class="empty-state">
             <div class="empty-icon"><i class="bi bi-search"></i></div>
-            <h5>Không tìm thấy sản phẩm phù hợp</h5>
-            <p class="text-muted">Thử đổi từ khóa, danh mục hoặc thứ tự sắp xếp.</p>
+            @if (Model.SortOrder == "nearby" && !Model.MissingNearbyLocation)
+            {
+                <h5>Không có sản phẩm trong phạm vi @Model.NearbyRadiusKm km</h5>
+                <p class="text-muted">Thử bỏ bớt lọc danh mục/từ khóa hoặc chuyển sang sắp xếp khác.</p>
+            }
+            else
+            {
+                <h5>Không tìm thấy sản phẩm phù hợp</h5>
+                <p class="text-muted">Thử đổi từ khóa, danh mục hoặc thứ tự sắp xếp.</p>
+            }
             <a asp-action="Index" class="btn btn-gradient mt-2">Xem toàn bộ sản phẩm</a>
         </div>
     }
@@ -161,6 +181,45 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+            const nearbySortBtn = document.getElementById('nearby-sort-btn');
+            if (nearbySortBtn) {
+                nearbySortBtn.addEventListener('click', function (event) {
+                    event.preventDefault();
+
+                    const nearbyUrl = this.dataset.nearbyUrl;
+                    if (!nearbyUrl) return;
+
+                    const hasLatCookie = document.cookie.includes('user_lat=');
+                    const hasLngCookie = document.cookie.includes('user_lng=');
+                    if (hasLatCookie && hasLngCookie) {
+                        window.location.href = nearbyUrl;
+                        return;
+                    }
+
+                    if (!navigator.geolocation) {
+                        alert('Trình duyệt không hỗ trợ định vị. Không thể lọc theo gần đây.');
+                        return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        function (position) {
+                            const maxAgeSeconds = 60 * 60 * 24 * 30; // 30 days
+                            const lat = position.coords.latitude.toString();
+                            const lng = position.coords.longitude.toString();
+
+                            document.cookie = `user_lat=${encodeURIComponent(lat)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax`;
+                            document.cookie = `user_lng=${encodeURIComponent(lng)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax`;
+
+                            window.location.href = nearbyUrl;
+                        },
+                        function () {
+                            alert('Vui lòng bật vị trí để ưu tiên sản phẩm trong phạm vi 50 km.');
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                });
+            }
+
             let timeout = null;
             $('#search-input').on('input', function () {
                 clearTimeout(timeout);

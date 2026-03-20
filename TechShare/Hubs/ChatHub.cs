@@ -19,17 +19,22 @@ namespace TechShare.Hubs
         public async Task SendMessage(string receiverId, string message)
         {
             var senderId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(senderId) || string.IsNullOrEmpty(receiverId) || string.IsNullOrEmpty(message))
+            if (string.IsNullOrEmpty(senderId) || string.IsNullOrEmpty(receiverId) || string.IsNullOrWhiteSpace(message))
             {
                 return;
             }
 
-            // Lưu tin nhắn vào DB
+            var trimmedMessage = message.Trim();
+            if (string.IsNullOrEmpty(trimmedMessage))
+            {
+                return;
+            }
+
             var chatMsg = new ChatMessage
             {
                 SenderId = senderId,
                 ReceiverId = receiverId,
-                Message = message,
+                Message = trimmedMessage,
                 SentAt = DateTime.Now,
                 IsRead = false
             };
@@ -37,11 +42,8 @@ namespace TechShare.Hubs
             _context.ChatMessages.Add(chatMsg);
             await _context.SaveChangesAsync();
 
-            // Gửi tin nhắn đến người nhận
-            await Clients.User(receiverId).SendAsync("ReceiveMessage", senderId, message, chatMsg.SentAt.ToString("HH:mm"));
-
-            // Gửi tin nhắn cho chính mình (để hiển thị lên UI)
-            await Clients.Caller.SendAsync("MessageSent", receiverId, message, chatMsg.SentAt.ToString("HH:mm"));
+            await Clients.Users(new[] { senderId, receiverId })
+                .SendAsync("ReceiveMessage", senderId, trimmedMessage, chatMsg.SentAt.ToString("HH:mm"));
         }
     }
 }

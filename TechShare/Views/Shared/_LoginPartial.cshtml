@@ -22,24 +22,26 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="userAvatarMenu">
                 <li>
+                    <a class="dropdown-item fw-semibold d-flex align-items-center" asp-controller="Home"
+                           asp-action="Profile">
+                        <i class="bi bi-person-vcard fs-5 me-2 text-primary"></i> Thông tin cá nhân
+                    </a>
+                </li>
+                <li>
                     <a class="dropdown-item fw-semibold text-primary d-flex align-items-center" href="#"
                            data-bs-toggle="modal" data-bs-target="#avatarModal">
                         <i class="bi bi-camera fs-5 me-2"></i> Đổi ảnh đại diện
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item fw-semibold d-flex align-items-center" asp-controller="Contact"
-                           asp-action="MyMessages">
+                    <a class="dropdown-item fw-semibold d-flex align-items-center" asp-controller="Chat"
+                           asp-action="Index">
                         <i class="bi bi-chat-dots fs-5 me-2 text-primary"></i> Tin nhắn của tôi
                     </a>
                 </li>
                 <li>
                     <hr class="dropdown-divider">
                 </li> @* Dòng kẻ ngăn cách *@
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-
                 <li>
                     <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout"
                           asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
