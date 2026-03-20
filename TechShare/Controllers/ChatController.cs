@@ -24,21 +24,21 @@ namespace TechShare.Controllers
         {
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Tìm những người đã từng chat với user hiện tại
-            var chatHistoryUserIds = await _context.ChatMessages
-                .Where(m => m.SenderId == currentUserId || m.ReceiverId == currentUserId)
-                .Select(m => m.SenderId == currentUserId ? m.ReceiverId : m.SenderId)
-                .Distinct()
-                .ToListAsync();
-
+            // CÁCH SỬA LỖI SQL TẠI ĐÂY: 
+            // Thay vì dùng danh sách trung gian và .Contains(), ta dùng .Any() truy vấn trực tiếp.
+            // Câu lệnh này tương thích 100% với các bản SQL Server đời cũ.
             var chatUsers = await _userManager.Users
-                .Where(u => chatHistoryUserIds.Contains(u.Id))
+                .Where(u => _context.ChatMessages.Any(m => 
+                    (m.SenderId == currentUserId && m.ReceiverId == u.Id) || 
+                    (m.ReceiverId == currentUserId && m.SenderId == u.Id)))
                 .ToListAsync();
 
             ApplicationUser? activeUser = null;
             if (!string.IsNullOrEmpty(userId))
             {
                 activeUser = await _userManager.FindByIdAsync(userId);
+                
+                // Nếu đang bấm vào chat với một người mới tinh (chưa có trong lịch sử)
                 if (activeUser != null && !chatUsers.Any(u => u.Id == userId))
                 {
                     chatUsers.Add(activeUser);
@@ -56,10 +56,13 @@ namespace TechShare.Controllers
                     .OrderBy(m => m.SentAt)
                     .ToListAsync();
                 
-                // Đánh dấu đã đọc
+                // Đánh dấu đã đọc các tin nhắn người kia gửi cho mình
                 var unreadMsgs = messages.Where(m => m.ReceiverId == currentUserId && !m.IsRead).ToList();
-                foreach (var m in unreadMsgs) m.IsRead = true;
-                if (unreadMsgs.Any()) await _context.SaveChangesAsync();
+                if (unreadMsgs.Any())
+                {
+                    foreach (var m in unreadMsgs) m.IsRead = true;
+                    await _context.SaveChangesAsync();
+                }
 
                 ViewBag.Messages = messages;
             }

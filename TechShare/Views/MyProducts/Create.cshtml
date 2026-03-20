@@ -1,0 +1,60 @@
+@model TechShare.Models.Product
+@{
+    ViewData["Title"] = "Đăng thiết bị cho thuê";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h4 class="mb-0 fw-bold text-center"><i class="bi bi-cloud-upload me-2 text-primary"></i> Đăng thiết bị cho thuê</h4>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="Create" method="post" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label fw-semibold">Tên thiết bị <span class="text-danger">*</span></label>
+                                <input asp-for="Name" class="form-control form-control-lg rounded-3" placeholder="VD: Máy ảnh Sony A7III, Laptop Dell XPS..." required />
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
+                                <select asp-for="CategoryId" class="form-select form-select-lg rounded-3" asp-items="ViewBag.CategoryId" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold">Giá thuê / Ngày (VNĐ) <span class="text-danger">*</span></label>
+                                <input asp-for="PricePerDay" type="number" class="form-control form-control-lg rounded-3" placeholder="VD: 150000" required />
+                            </div>
+
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label fw-semibold">Vị trí giao máy <span class="text-danger">*</span></label>
+                                <input asp-for="Location" class="form-control form-control-lg rounded-3" placeholder="VD: Quận 1, TP.HCM" required />
+                            </div>
+
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label fw-semibold">Mô tả thiết bị</label>
+                                <textarea asp-for="Description" class="form-control rounded-3" rows="4" placeholder="Nhập tình trạng máy, phụ kiện đi kèm..."></textarea>
+                            </div>
+
+                            <div class="col-md-12 mb-4">
+                                <label class="form-label fw-semibold">Hình ảnh thực tế</label>
+                                <input type="file" name="imageFile" class="form-control form-control-lg rounded-3" accept="image/*" required />
+                            </div>
+
+                            <div class="col-12 text-center">
+                                <a asp-action="Index" class="btn btn-light rounded-pill px-4 me-2 fw-medium">Hủy bỏ</a>
+                                <button type="submit" class="btn text-white rounded-pill px-5 fw-bold shadow-sm" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%); border: none;">
+                                    Đăng bài ngay <i class="bi bi-send ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

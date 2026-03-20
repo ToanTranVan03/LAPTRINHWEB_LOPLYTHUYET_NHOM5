@@ -10,21 +10,41 @@
     .chat-container { height: calc(100vh - 180px); border-radius: 12px; overflow: hidden; }
     .chat-users-list { overflow-y: auto; height: 100%; border-right: 1px solid #dee2e6; }
     .chat-user-item { padding: 15px; border-bottom: 1px solid #dee2e6; cursor: pointer; transition: background 0.3s; }
-    .chat-user-item:hover, .chat-user-item.active { background-color: rgba(99, 102, 241, 0.1); }
-    .chat-messages { height: calc(100% - 130px); overflow-y: auto; padding: 20px; background-color: #f8f9fa; }
-    .chat-message { max-width: 70%; margin-bottom: 15px; border-radius: 15px; padding: 10px 15px; position: relative; }
-    .msg-sent { background: var(--gradient-primary); color: white; margin-left: auto; border-bottom-right-radius: 0; }
-    .msg-received { background: white; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-bottom-left-radius: 0; }
-    .msg-time { font-size: 0.75rem; opacity: 0.7; margin-top: 5px; text-align: right; }
+    .chat-user-item:hover, .chat-user-item.active { background-color: rgba(138, 43, 226, 0.1); border-left: 4px solid #8A2BE2; }
+    .chat-messages { height: calc(100% - 130px); overflow-y: auto; padding: 20px; background-color: #f0f2f5; }
+    .chat-message { max-width: 70%; margin-bottom: 15px; border-radius: 18px; padding: 12px 16px; position: relative; font-size: 0.95rem; }
+    
+    /* Tin nhắn gửi đi: Nền tím Gradient, chữ trắng, đổ bóng nhẹ */
+    .msg-sent { 
+        background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%); 
+        color: white; 
+        margin-left: auto; 
+        border-bottom-right-radius: 4px; 
+        box-shadow: 0 2px 5px rgba(138, 43, 226, 0.2);
+    }
+    
+    /* Tin nhắn nhận được: Nền trắng, chữ đen sẫm, viền mờ */
+    .msg-received { 
+        background: #ffffff; 
+        color: #1c1e21; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        border-bottom-left-radius: 4px; 
+        border: 1px solid #e9ecef;
+    }
+    
+    .msg-time { font-size: 0.7rem; opacity: 0.8; margin-top: 4px; text-align: right; }
+    .msg-received .msg-time { color: #6c757d; }
 </style>
 
 <div class="container py-4">
     <div class="row chat-container bg-white shadow-sm border">
         
-        <!-- Left Sidebar: Users -->
         <div class="col-md-4 p-0 chat-users-list bg-light">
             <div class="p-3 border-bottom bg-white sticky-top">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-chat-dots me-2"></i> Trò chuyện</h5>
+                <h5 class="mb-0 fw-bold" style="color: #4B0082;"><i class="bi bi-chat-dots-fill me-2"></i> Trò chuyện</h5>
+                <a href="javascript:history.back()" class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm text-muted fw-medium" title="Quay lại trang trước">
+                    <i class="bi bi-arrow-return-left me-1"></i> Trở về
+                </a>
             </div>
             
             @if (chatUsers != null && chatUsers.Any())
@@ -35,7 +55,7 @@
                         <div class="chat-user-item d-flex align-items-center @(user.Id == activeUserId ? "active" : "")">
                             <div class="flex-shrink-0">
                                 <img src="https://ui-avatars.com/api/?name=@Uri.EscapeDataString(user.FullName ?? user.UserName)&background=random" 
-                                     alt="@user.FullName" class="rounded-circle" width="50" height="50">
+                                     alt="@user.FullName" class="rounded-circle shadow-sm" width="50" height="50">
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <h6 class="mb-0 fw-bold">@user.FullName</h6>
@@ -49,30 +69,27 @@
             }
             else
             {
-                <div class="p-4 text-center text-muted">
+                <div class="p-4 text-center text-muted mt-5">
                     <i class="bi bi-inbox fs-1 mb-2"></i>
                     <p>Chưa có hộp thoại nào</p>
                 </div>
             }
         </div>
 
-        <!-- Right Side: Chat Window -->
         <div class="col-md-8 p-0 d-flex flex-column h-100 position-relative">
             @if (!string.IsNullOrEmpty(activeUserId))
             {
                 var activeUserModel = chatUsers?.FirstOrDefault(u => u.Id == activeUserId);
                 
-                <!-- Chat Header -->
                 <div class="p-3 border-bottom d-flex align-items-center bg-white shadow-sm" style="z-index: 10;">
                     <img src="https://ui-avatars.com/api/?name=@Uri.EscapeDataString(activeUserModel?.FullName ?? "User")&background=random" 
-                         class="rounded-circle me-3" width="45" height="45">
+                         class="rounded-circle me-3 shadow-sm" width="45" height="45">
                     <div>
                         <h6 class="mb-0 fw-bold">@activeUserModel?.FullName</h6>
-                        <small class="text-success"><i class="bi bi-circle-fill" style="font-size: 8px;"></i> Online</small>
+                        <small class="text-success fw-medium"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i>Đang hoạt động</small>
                     </div>
                 </div>
 
-                <!-- Chat Messages Area -->
                 <div class="chat-messages flex-grow-1" id="chatArea">
                     @if (messages != null)
                     {
@@ -87,11 +104,10 @@
                     }
                 </div>
 
-                <!-- Chat Input Frame -->
                 <div class="p-3 bg-white border-top">
                     <div class="input-group">
-                        <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn của bạn..." autocomplete="off">
-                        <button id="sendButton" class="btn btn-gradient px-4">
+                        <input type="text" id="messageInput" class="form-control form-control-lg bg-light border-0" placeholder="Nhập tin nhắn..." autocomplete="off">
+                        <button id="sendButton" class="btn text-white px-4" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%);">
                             <i class="bi bi-send-fill"></i>
                         </button>
                     </div>
@@ -103,9 +119,9 @@
             else
             {
                 <div class="d-flex w-100 h-100 justify-content-center align-items-center text-center text-muted flex-column bg-light">
-                    <i class="bi bi-chat-square-text fs-1 mb-3"></i>
-                    <h5>Chọn một cuộc trò chuyện để bắt đầu</h5>
-                    <p>Hoặc liên hệ với người bán từ trang chi tiết sản phẩm.</p>
+                    <i class="bi bi-chat-square-text fs-1 mb-3 opacity-50"></i>
+                    <h5 class="fw-semibold">Chọn một cuộc trò chuyện để bắt đầu</h5>
+                    <p class="small">Hoặc liên hệ với người bán từ trang chi tiết sản phẩm.</p>
                 </div>
             }
         </div>
@@ -125,7 +141,7 @@
 
             // Nhận tin
             connection.on("ReceiveMessage", function (senderId, message, time) {
-                var activeUser = document.getElementById("receiverId").value;
+                var activeUser = document.getElementById("receiverId") ? document.getElementById("receiverId").value : "";
                 if (senderId === activeUser) {
                     var msgDiv = $('<div class="chat-message msg-received"></div>')
                         .append($('<div></div>').text(message))
@@ -133,18 +149,18 @@
                     $('#chatArea').append(msgDiv);
                     if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
                 } else {
-                    // CÓ tin nhắn mới nhưng ko ở tab này, có thể hiện toast thông báo
+                    // Hiện thông báo (Toast) khi có tin nhắn từ người khác
                     var toastHtml = `
                         <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
-                            <div class="toast show animate__animated animate__fadeInUp bg-white" data-bs-delay="5000">
-                                <div class="toast-header border-bottom-0 text-primary">
+                            <div class="toast show animate__animated animate__fadeInUp bg-white shadow-lg border-0 rounded-3" data-bs-delay="5000">
+                                <div class="toast-header border-bottom-0 text-white" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%);">
                                     <i class="bi bi-chat-dots-fill me-2"></i>
                                     <strong class="me-auto">Tin nhắn mới</strong>
-                                    <small>${time}</small>
-                                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                                    <small class="text-white-50">${time}</small>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
                                 </div>
-                                <div class="toast-body pt-0 text-dark">
-                                    Bạn có tin nhắn mới từ ID ${senderId}. <a href="/Chat/Index?userId=${senderId}">Xem ngay</a>
+                                <div class="toast-body pt-3 pb-3 text-dark fw-medium">
+                                    Bạn có tin nhắn mới! <a href="/Chat/Index?userId=${senderId}" class="text-primary text-decoration-none">Xem ngay</a>
                                 </div>
                             </div>
                         </div>`;
@@ -152,7 +168,7 @@
                 }
             });
 
-            // Gửi xong phản báo lên UI 
+            // Gửi xong phản hồi lên UI 
             connection.on("MessageSent", function (receiverId, message, time) {
                 var msgDiv = $('<div class="chat-message msg-sent"></div>')
                     .append($('<div></div>').text(message))
