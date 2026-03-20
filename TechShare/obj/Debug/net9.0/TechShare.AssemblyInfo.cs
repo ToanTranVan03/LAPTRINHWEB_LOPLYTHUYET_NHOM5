@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TechShare")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+66569f7c53d12e526d112017a7bb44cd2d04d34c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+223c2cd9448f00fa7ac8291f6d57fb0339f7f47e")]
 [assembly: System.Reflection.AssemblyProductAttribute("TechShare")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TechShare")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

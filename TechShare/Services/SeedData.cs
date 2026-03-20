@@ -26,7 +26,7 @@ namespace TechShare.Services
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var env = serviceProvider.GetRequiredService<IWebHostEnvironment>();
 
-            await context.Database.EnsureCreatedAsync();
+            await context.Database.MigrateAsync();
 
             // ============================================================
             // 1. SEED ROLES
@@ -393,6 +393,7 @@ namespace TechShare.Services
             }
 
             await RemoveGeneratedSeedProductsAsync(context);
+            await EnsureFeaturedPhoneProductsAsync(context, adminUser.Id, env.WebRootPath);
             await BackfillProductCoordinatesAsync(context);
 
             // ============================================================
@@ -729,6 +730,91 @@ namespace TechShare.Services
             }
 
             context.Products.RemoveRange(generatedProducts);
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task EnsureFeaturedPhoneProductsAsync(
+            ApplicationDbContext context,
+            string ownerId,
+            string webRootPath)
+        {
+            var categories = await context.Categories
+                .OrderBy(c => c.Id)
+                .ToListAsync();
+
+            var phoneCategory = categories.FirstOrDefault(c =>
+            {
+                var normalized = NormalizeText(c.Name);
+                return normalized.Contains("dien thoai", StringComparison.OrdinalIgnoreCase) ||
+                       normalized.Contains("thoai", StringComparison.OrdinalIgnoreCase);
+            });
+
+            if (phoneCategory == null)
+            {
+                phoneCategory = categories.FirstOrDefault(c => c.Id == 7);
+            }
+
+            if (phoneCategory == null)
+            {
+                return;
+            }
+
+            var featuredPhones = new[]
+            {
+                new { Name = "iPhone 15 Pro Max 256GB", Price = 320_000m, Location = "Ha Noi - Cau Giay", Description = "Flagship Apple voi camera tele 5x, quay video ProRes dep va on dinh. May dep 99%, pin tot, hop phu kien day du." },
+                new { Name = "Samsung Galaxy Z Fold6 512GB", Price = 350_000m, Location = "TP. HCM - Quan 1", Description = "Dien thoai gap cao cap man hinh lon, rat hop lam viec da nhiem va giai tri. Ban mau moi, hinh thuc dep, hoat dong on dinh." },
+                new { Name = "Google Pixel 8 Pro 256GB", Price = 240_000m, Location = "Da Nang - Hai Chau", Description = "Camera computational photography rat manh, chup chan dung va dem an tuong. May giu ky, day du op va cap." },
+                new { Name = "Xiaomi 14 Ultra 512GB", Price = 290_000m, Location = "Ha Noi - Dong Da", Description = "Cau hinh manh, he thong camera Leica cho chi tiet cao. Thich hop quay chup noi dung va su dung hang ngay." },
+                new { Name = "vivo X200 Pro 512GB", Price = 280_000m, Location = "TP. HCM - Binh Thanh", Description = "Noi bat voi camera ZEISS va kha nang chup zoom chat luong cao. May dep, man hinh sang dep, pin ben." },
+                new { Name = "OPPO Find X8 Pro 512GB", Price = 270_000m, Location = "Da Nang - Thanh Khe", Description = "Thiet ke cao cap, camera toan dien va hieu nang manh me. May dep, su dung muot, phu kien co ban day du." },
+                new { Name = "OnePlus 12 256GB", Price = 220_000m, Location = "TP. HCM - Quan 7", Description = "Hieu nang cao, man hinh dep va sac nhanh. Phu hop cho choi game, quay video ngan va cong viec di dong." },
+                new { Name = "HONOR Magic6 Pro 512GB", Price = 260_000m, Location = "Ha Noi - Nam Tu Liem", Description = "Man hinh dep, camera da dung tot va pin trau. Ngoai hinh sang, may van hanh on dinh cho nhu cau cao." },
+                new { Name = "ASUS ROG Phone 8 Pro 512GB", Price = 300_000m, Location = "TP. HCM - Go Vap", Description = "Gaming phone manh me, tan nhiet tot, loa lon ro. Danh cho nguoi can hieu nang cao va trai nghiem game dinh." },
+                new { Name = "Sony Xperia 1 VI 256GB", Price = 250_000m, Location = "Ha Noi - Tay Ho", Description = "Phong cach Sony toi gian, man hinh dep va camera mau sac tu nhien. Hop voi nguoi thich chup anh, quay video." }
+            };
+
+            var existingNames = await context.Products
+                .Select(p => p.Name)
+                .ToListAsync();
+            var existingNameSet = new HashSet<string>(existingNames, StringComparer.OrdinalIgnoreCase);
+
+            var nextSequence = (await context.Products.MaxAsync(p => (int?)p.Id) ?? 0) + 100;
+            var productsToAdd = new List<Product>();
+
+            foreach (var item in featuredPhones)
+            {
+                if (!existingNameSet.Add(item.Name))
+                {
+                    continue;
+                }
+
+                var product = new Product
+                {
+                    Name = item.Name,
+                    Description = item.Description,
+                    PricePerDay = item.Price,
+                    CategoryId = phoneCategory.Id,
+                    Location = item.Location,
+                    IsAvailable = true,
+                    ImageUrl = EnsureProductImage(webRootPath, "phone", item.Name, nextSequence++),
+                    OwnerId = ownerId
+                };
+
+                if (TryResolveCoordinatesFromLocation(item.Location, out var lat, out var lng))
+                {
+                    product.Latitude = lat;
+                    product.Longitude = lng;
+                }
+
+                productsToAdd.Add(product);
+            }
+
+            if (!productsToAdd.Any())
+            {
+                return;
+            }
+
+            context.Products.AddRange(productsToAdd);
             await context.SaveChangesAsync();
         }
 
