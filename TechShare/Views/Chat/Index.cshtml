@@ -1,5 +1,5 @@
-@{
-    ViewData["Title"] = "Tin nhắn";
+﻿@{
+    ViewData["Title"] = "Tin nhan";
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var chatUsers = ViewBag.ChatUsers as List<TechShare.Models.ApplicationUser>;
     var activeUserId = ViewBag.ActiveUserId as string;
@@ -20,22 +20,21 @@
         border-bottom-right-radius: 0;
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
     }
-    .msg-sent .msg-time {
-        color: rgba(255, 255, 255, 0.9);
-    }
+    .msg-sent .msg-time { color: rgba(255, 255, 255, 0.9); }
     .msg-received { background: white; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-bottom-left-radius: 0; }
     .msg-time { font-size: 0.75rem; opacity: 0.7; margin-top: 5px; text-align: right; }
 </style>
 
 <div class="container py-4">
     <div class="row chat-container bg-white shadow-sm border">
-        
-        <!-- Left Sidebar: Users -->
         <div class="col-md-4 p-0 chat-users-list bg-light">
             <div class="p-3 border-bottom bg-white sticky-top">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-chat-dots me-2"></i> Trò chuyện</h5>
+                <h5 class="mb-2 fw-bold" style="color: #4B0082;"><i class="bi bi-chat-dots-fill me-2"></i> Tro chuyen</h5>
+                <a href="javascript:history.back()" class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm text-muted fw-medium" title="Quay lai trang truoc">
+                    <i class="bi bi-arrow-return-left me-1"></i> Tro ve
+                </a>
             </div>
-            
+
             @if (chatUsers != null && chatUsers.Any())
             {
                 foreach (var user in chatUsers)
@@ -43,14 +42,12 @@
                     <a href="@Url.Action("Index", new { userId = user.Id })" class="text-decoration-none text-dark d-block">
                         <div class="chat-user-item d-flex align-items-center @(user.Id == activeUserId ? "active" : "")">
                             <div class="flex-shrink-0">
-                                <img src="https://ui-avatars.com/api/?name=@Uri.EscapeDataString(user.FullName ?? user.UserName)&background=random" 
-                                     alt="@user.FullName" class="rounded-circle" width="50" height="50">
+                                <img src="https://ui-avatars.com/api/?name=@Uri.EscapeDataString(user.FullName ?? user.UserName ?? "User")&background=random"
+                                     alt="@user.FullName" class="rounded-circle shadow-sm" width="50" height="50">
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <h6 class="mb-0 fw-bold">@user.FullName</h6>
-                                <small class="text-muted text-truncate d-inline-block" style="max-width: 150px;">
-                                    @(user.Email)
-                                </small>
+                                <small class="text-muted text-truncate d-inline-block" style="max-width: 150px;">@user.Email</small>
                             </div>
                         </div>
                     </a>
@@ -58,30 +55,27 @@
             }
             else
             {
-                <div class="p-4 text-center text-muted">
+                <div class="p-4 text-center text-muted mt-5">
                     <i class="bi bi-inbox fs-1 mb-2"></i>
-                    <p>Chưa có hộp thoại nào</p>
+                    <p>Chua co hop thoai nao</p>
                 </div>
             }
         </div>
 
-        <!-- Right Side: Chat Window -->
         <div class="col-md-8 p-0 d-flex flex-column h-100 position-relative">
             @if (!string.IsNullOrEmpty(activeUserId))
             {
                 var activeUserModel = chatUsers?.FirstOrDefault(u => u.Id == activeUserId);
-                
-                <!-- Chat Header -->
+
                 <div class="p-3 border-bottom d-flex align-items-center bg-white shadow-sm" style="z-index: 10;">
-                    <img src="https://ui-avatars.com/api/?name=@Uri.EscapeDataString(activeUserModel?.FullName ?? "User")&background=random" 
-                         class="rounded-circle me-3" width="45" height="45">
+                    <img src="https://ui-avatars.com/api/?name=@Uri.EscapeDataString(activeUserModel?.FullName ?? "User")&background=random"
+                         class="rounded-circle me-3 shadow-sm" width="45" height="45">
                     <div>
                         <h6 class="mb-0 fw-bold">@activeUserModel?.FullName</h6>
-                        <small class="text-success"><i class="bi bi-circle-fill" style="font-size: 8px;"></i> Online</small>
+                        <small class="text-success fw-medium"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i>Online</small>
                     </div>
                 </div>
 
-                <!-- Chat Messages Area -->
                 <div class="chat-messages flex-grow-1" id="chatArea">
                     @if (messages != null)
                     {
@@ -96,11 +90,10 @@
                     }
                 </div>
 
-                <!-- Chat Input Frame -->
                 <div class="p-3 bg-white border-top">
                     <div class="input-group">
-                        <input type="text" id="messageInput" class="form-control" placeholder="Nhập tin nhắn của bạn..." autocomplete="off">
-                        <button id="sendButton" class="btn btn-gradient px-4">
+                        <input type="text" id="messageInput" class="form-control form-control-lg bg-light border-0" placeholder="Nhap tin nhan..." autocomplete="off">
+                        <button id="sendButton" class="btn text-white px-4" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%);">
                             <i class="bi bi-send-fill"></i>
                         </button>
                     </div>
@@ -112,9 +105,9 @@
             else
             {
                 <div class="d-flex w-100 h-100 justify-content-center align-items-center text-center text-muted flex-column bg-light">
-                    <i class="bi bi-chat-square-text fs-1 mb-3"></i>
-                    <h5>Chọn một cuộc trò chuyện để bắt đầu</h5>
-                    <p>Hoặc liên hệ với người bán từ trang chi tiết sản phẩm.</p>
+                    <i class="bi bi-chat-square-text fs-1 mb-3 opacity-50"></i>
+                    <h5 class="fw-semibold">Chon mot cuoc tro chuyen de bat dau</h5>
+                    <p class="small">Hoac lien he nguoi ban tu trang chi tiet san pham.</p>
                 </div>
             }
         </div>
@@ -171,12 +164,12 @@
                         <div class="toast show animate__animated animate__fadeInUp bg-white" data-bs-delay="5000">
                             <div class="toast-header border-bottom-0 text-primary">
                                 <i class="bi bi-chat-dots-fill me-2"></i>
-                                <strong class="me-auto">Tin nhắn mới</strong>
+                                <strong class="me-auto">Tin nhan moi</strong>
                                 <small>${time}</small>
                                 <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
                             </div>
                             <div class="toast-body pt-0 text-dark">
-                                Bạn có tin nhắn mới từ người dùng khác. <a href="/Chat/Index?userId=${senderId}">Xem ngay</a>
+                                Ban co tin nhan moi tu nguoi dung khac. <a href="/Chat/Index?userId=${senderId}">Xem ngay</a>
                             </div>
                         </div>
                     </div>`;
@@ -200,7 +193,7 @@
                     await connection.invoke("SendMessage", receiverId, message);
                 } catch (err) {
                     console.error(err.toString());
-                    alert("Không thể gửi tin nhắn. Vui lòng thử lại.");
+                    alert("Khong the gui tin nhan. Vui long thu lai.");
                 }
             });
 

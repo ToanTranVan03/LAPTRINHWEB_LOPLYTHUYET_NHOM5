@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,30 +18,30 @@ namespace TechShare.Areas.Identity.Pages.Account
         }
 
         [BindProperty]
-        public InputModel Input { get; set; }
+        public InputModel Input { get; set; } = new();
 
         public class InputModel
         {
-            [Required(ErrorMessage = "Vui lòng nhập email")]
+            [Required(ErrorMessage = "Vui lÃ²ng nháº­p email")]
             [EmailAddress]
-            public string Email { get; set; }
+            public string Email { get; set; } = string.Empty;
 
-            [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới")]
-            [StringLength(100, ErrorMessage = "Mật khẩu tối thiểu {2} ký tự.", MinimumLength = 3)]
+            [Required(ErrorMessage = "Vui lÃ²ng nháº­p máº­t kháº©u má»›i")]
+            [StringLength(100, ErrorMessage = "Máº­t kháº©u tá»‘i thiá»ƒu {2} kÃ½ tá»±.", MinimumLength = 3)]
             [DataType(DataType.Password)]
-            public string Password { get; set; }
+            public string Password { get; set; } = string.Empty;
 
             [DataType(DataType.Password)]
-            [Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp.")]
-            public string ConfirmPassword { get; set; }
+            [Compare("Password", ErrorMessage = "Máº­t kháº©u xÃ¡c nháº­n khÃ´ng khá»›p.")]
+            public string? ConfirmPassword { get; set; }
 
             [Required]
-            public string Code { get; set; }
+            public string Code { get; set; } = string.Empty;
         }
 
-        public IActionResult OnGet(string code = null)
+        public IActionResult OnGet(string? code = null)
         {
-            if (code == null) return BadRequest("Lỗi: Yêu cầu mã xác thực để đặt lại mật khẩu.");
+            if (code == null) return BadRequest("Lá»—i: YÃªu cáº§u mÃ£ xÃ¡c thá»±c Ä‘á»ƒ Ä‘áº·t láº¡i máº­t kháº©u.");
             
             Input = new InputModel { Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code)) };
             return Page();
@@ -54,15 +54,15 @@ namespace TechShare.Areas.Identity.Pages.Account
             var user = await _userManager.FindByEmailAsync(Input.Email);
             if (user == null)
             {
-                // Bảo mật: Vẫn báo thành công dù email không tồn tại
-                TempData["StatusMessage"] = "Mật khẩu đã được khôi phục thành công. Vui lòng đăng nhập!";
+                // Báº£o máº­t: Váº«n bÃ¡o thÃ nh cÃ´ng dÃ¹ email khÃ´ng tá»“n táº¡i
+                TempData["StatusMessage"] = "Máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c khÃ´i phá»¥c thÃ nh cÃ´ng. Vui lÃ²ng Ä‘Äƒng nháº­p!";
                 return RedirectToPage("./Login");
             }
 
             var result = await _userManager.ResetPasswordAsync(user, Input.Code, Input.Password);
             if (result.Succeeded)
             {
-                TempData["StatusMessage"] = "Mật khẩu đã được khôi phục thành công. Vui lòng đăng nhập!";
+                TempData["StatusMessage"] = "Máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c khÃ´i phá»¥c thÃ nh cÃ´ng. Vui lÃ²ng Ä‘Äƒng nháº­p!";
                 return RedirectToPage("./Login");
             }
 

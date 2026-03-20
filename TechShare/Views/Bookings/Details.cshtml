@@ -7,7 +7,7 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="card-premium">
+            <div id="invoice-content" class="card-premium">
                 <div class="card-header-gradient text-center">
                     <h4 class="mb-0"><i class="bi bi-receipt me-2"></i> Chi tiết đơn hàng #@Model.Id</h4>
                 </div>
@@ -88,7 +88,7 @@
                                     </div>
                                     @if (!Model.IsDepositPaid && Model.RenterId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
                                     {
-                                        <a asp-controller="Payment" asp-action="Checkout" asp-route-bookingId="@Model.Id" class="btn btn-sm btn-gradient shadow-sm">
+                                        <a asp-controller="Payment" asp-action="Checkout" asp-route-bookingId="@Model.Id" class="btn btn-sm btn-gradient shadow-sm" data-html2canvas-ignore="true">
                                             <i class="bi bi-credit-card me-1"></i> Thanh toán VNPay Demo
                                         </a>
                                     }
@@ -96,20 +96,47 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="d-flex gap-2 justify-content-center mt-4">
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-gradient">
-                                <i class="bi bi-pencil me-1"></i> Chỉnh sửa
-                            </a>
-                        }
-                        <a asp-action="MyBookings" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> Quay lại
-                        </a>
-                    </div>
                 </div>
+            </div> <div class="d-flex gap-3 justify-content-center mt-4 mb-5">
+                <a asp-action="MyBookings" class="btn btn-outline-secondary px-4 fw-medium">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại
+                </a>
+
+                @if (User.IsInRole("Admin"))
+                {
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-gradient px-4">
+                        <i class="bi bi-pencil me-1"></i> Chỉnh sửa
+                    </a>
+                }
+                
+                <button onclick="downloadInvoice()" class="btn text-white px-4 fw-bold shadow-sm" style="background: linear-gradient(135deg, #e52d27 0%, #b31217 100%); border: none;">
+                    <i class="bi bi-file-earmark-pdf-fill me-2"></i> Xuất hóa đơn PDF
+                </button>
             </div>
+            
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script>
+        function downloadInvoice() {
+            // Lấy khối HTML có ID là 'invoice-content'
+            var element = document.getElementById('invoice-content'); 
+            
+            // Cấu hình chất lượng in PDF
+            var opt = {
+                margin:       0.5, // Căn lề nửa inch
+                filename:     'HoaDon_TechShare_DH' + @Model.Id + '.pdf', // Đặt tên file tự động theo mã đơn
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true }, // Làm nét ảnh và chữ
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Thực thi tải file
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+}

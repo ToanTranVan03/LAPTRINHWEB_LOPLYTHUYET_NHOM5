@@ -41,9 +41,10 @@ namespace TechShare.Controllers
                 .ToListAsync();
 
             var chatHistoryUserIds = chatHistory.Select(x => x.UserId).ToList();
-
             var chatUsers = await _userManager.Users
-                .Where(u => chatHistoryUserIds.Contains(u.Id))
+                .Where(u => _context.ChatMessages.Any(m => 
+                    (m.SenderId == currentUserId && m.ReceiverId == u.Id) || 
+                    (m.ReceiverId == currentUserId && m.SenderId == u.Id)))
                 .ToListAsync();
 
             chatUsers = chatUsers
@@ -59,6 +60,8 @@ namespace TechShare.Controllers
             if (!string.IsNullOrEmpty(userId))
             {
                 activeUser = await _userManager.FindByIdAsync(userId);
+                
+                // Nếu đang bấm vào chat với một người mới tinh (chưa có trong lịch sử)
                 if (activeUser != null && !chatUsers.Any(u => u.Id == userId))
                 {
                     chatUsers.Add(activeUser);
@@ -77,13 +80,12 @@ namespace TechShare.Controllers
                     .ToListAsync();
 
                 var unreadMsgs = messages.Where(m => m.ReceiverId == currentUserId && !m.IsRead).ToList();
-                foreach (var m in unreadMsgs)
-                {
-                    m.IsRead = true;
-                }
-
                 if (unreadMsgs.Any())
                 {
+                    foreach (var m in unreadMsgs)
+                    {
+                        m.IsRead = true;
+                    }
                     await _context.SaveChangesAsync();
                 }
 

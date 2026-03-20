@@ -1,0 +1,86 @@
+@model IEnumerable<TechShare.Models.Product>
+@{
+    ViewData["Title"] = "Thiết bị của tôi";
+}
+
+<div class="container py-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Quản lý thiết bị cho thuê</h2>
+            <p class="text-muted">Các thiết bị bạn đang đăng cho thuê trên hệ thống TechShare.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm" style="background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 100%); border: none;">
+                <i class="bi bi-plus-lg me-1"></i> Đăng thiết bị mới
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted">
+                    <tr>
+                        <th class="py-3 px-4">Sản phẩm</th>
+                        <th class="py-3">Danh mục</th>
+                        <th class="py-3">Giá thuê / Ngày</th>
+                        <th class="py-3">Trạng thái</th>
+                        <th class="py-3 text-end px-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox display-4 d-block mb-3 opacity-50"></i>
+                                Bạn chưa đăng thiết bị nào cho thuê cả.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="px-4">
+                                <div class="d-flex align-items-center">
+                                    <img src="@item.ImageUrl" class="rounded-3 shadow-sm object-fit-cover me-3" style="width: 60px; height: 60px;" alt="Product">
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">@item.Name</h6>
+                                        <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>@item.Location</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">@item.Category?.Name</span></td>
+                            <td class="fw-semibold text-primary">@item.PricePerDay.ToString("N0") đ</td>
+                            <td>
+                                @if (item.IsAvailable)
+                                {
+                                    <span class="badge bg-success rounded-pill"><i class="bi bi-check2 me-1"></i>Đang trống</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-clock me-1"></i>Đang cho thuê</span>
+                                }
+                            </td>
+                            <td class="text-end px-4">
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thiết bị này không?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
